@@ -10,6 +10,12 @@
   <img src="https://img.shields.io/badge/version-v1.3.0-ff2a85" alt="Version">
 </p>
 
+<p align="center">
+  <a href="https://render.com/deploy?repo=https://github.com/uucky/shareq">
+    <img src="https://render.com/images/deploy-to-render.svg" alt="Deploy to Render">
+  </a>
+</p>
+
 ---
 
 ## ✨ 功能亮点
