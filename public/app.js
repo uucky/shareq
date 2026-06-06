@@ -2,8 +2,12 @@
 
 // Web Audio API Synthesizer for high fidelity offline KTV sound effects
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let isSoundMuted = localStorage.getItem("shareq_gift_muted") === "true";
 
 function playSound(type) {
+  if (isSoundMuted && type !== 'chime') {
+    return;
+  }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
@@ -768,6 +772,29 @@ function setupEventListeners() {
     });
   });
 
+  // Reactions Gift Mute Button
+  const muteBtn = document.getElementById("btn-reaction-mute");
+  if (muteBtn) {
+    if (isSoundMuted) {
+      muteBtn.classList.add("muted");
+      muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+    }
+    muteBtn.addEventListener("click", () => {
+      isSoundMuted = !isSoundMuted;
+      localStorage.setItem("shareq_gift_muted", isSoundMuted);
+      if (isSoundMuted) {
+        muteBtn.classList.add("muted");
+        muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        showToast("info", "🔇 互动礼物音效已静音");
+      } else {
+        muteBtn.classList.remove("muted");
+        muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        showToast("info", "🔊 互动礼物音效已开启");
+        playSound('rose');
+      }
+    });
+  }
+
   // Easter Egg modal cancel/close
   document.getElementById("close-archive-modal-btn").addEventListener("click", closeArchiveModal);
   document.getElementById("archive-cancel-btn").addEventListener("click", closeArchiveModal);
@@ -1261,7 +1288,7 @@ function triggerReactionFloat(type) {
   emoji.style.animationDuration = `${randomDuration}s`;
   
   const randomSize = 1.5 + Math.random() * 1.5; // 1.5rem to 3rem
-  emoji.style.fontSize = `${randomSize}rem`;
+  emoji.style.fontSize = `calc(${randomSize}rem * var(--emoji-scale, 5))`;
 
   container.appendChild(emoji);
 

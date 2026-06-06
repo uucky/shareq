@@ -1253,6 +1253,37 @@ body.light-theme .brand-header h1 {
   font-size: 1.1rem;
 }
 
+.btn-reaction-mute {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-reaction-mute:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.btn-reaction-mute:active {
+  transform: scale(0.95);
+}
+
+.btn-reaction-mute.muted {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
 /* PLAYLIST TABS & CARD HEADER BUTTONS (打乱歌单 + 切歌/下一首) */
 .playlist-card-header {
   display: flex;
@@ -1657,20 +1688,35 @@ body.light-theme .brand-header h1 {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 300px;
-  height: 60vh;
+  width: 550px;
+  height: 70vh;
   pointer-events: none;
   z-index: 90;
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .floating-reaction-container {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
 .floating-emoji {
   position: absolute;
-  bottom: -50px;
+  bottom: -150px;
   font-size: 2.2rem;
-  animation: floatUp 3s forwards ease-in-out;
+  animation: floatUp 3.2s forwards ease-in-out;
   opacity: 0.9;
   user-select: none;
+  --emoji-scale: 5;
+}
+
+@media (max-width: 768px) {
+  .floating-emoji {
+    bottom: -80px;
+    --emoji-scale: 2.2;
+  }
 }
 
 /* Keyframes Animations */
@@ -1719,7 +1765,6 @@ body.light-theme .brand-header h1 {
 
 @keyframes floatUp {
   0% {
-    bottom: -50px;
     transform: translateX(0) scale(0.5);
     opacity: 0;
   }
@@ -1891,6 +1936,23 @@ body.light-theme .btn-reaction-gift {
 body.light-theme .btn-reaction-gift:hover {
   background: rgba(219, 39, 119, 0.06);
   border-color: var(--color-primary);
+}
+
+body.light-theme .btn-reaction-mute {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--text-secondary);
+}
+
+body.light-theme .btn-reaction-mute:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--text-primary);
+}
+
+body.light-theme .btn-reaction-mute.muted {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
 }
 
 body.light-theme .suggestion-tag {

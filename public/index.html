@@ -292,7 +292,12 @@
 
             <!-- Audience Interactive Panel -->
             <div class="audience-actions-panel" id="audience-actions-panel">
-              <span class="audience-action-title">给歌手互动送礼：</span>
+              <div class="audience-actions-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="audience-action-title" style="margin-bottom: 0;">给歌手互动送礼：</span>
+                <button type="button" class="btn-reaction-mute" id="btn-reaction-mute" title="静音/取消静音礼物音效">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+              </div>
               <div class="reaction-buttons-grid">
                 <button type="button" class="btn-reaction-gift" data-reaction="rose" title="送上玫瑰花 (Rose)">
                   <span class="gift-emoji">🌹</span> 玫瑰花
