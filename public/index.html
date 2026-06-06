@@ -150,6 +150,9 @@
               <button type="button" id="dropdown-theme-toggle-btn" class="dropdown-item">
                 <i class="fa-solid fa-sun"></i> 切换为亮色/暗色
               </button>
+              <button type="button" id="dropdown-compact-toggle-btn" class="dropdown-item">
+                <i class="fa-solid fa-compress"></i> 切换紧凑模式 (Compact)
+              </button>
               <button type="button" id="dropdown-stats-btn" class="dropdown-item">
                 <i class="fa-solid fa-chart-simple"></i> 歌会数据统计 (Stats)
               </button>
@@ -365,37 +368,30 @@
             <div class="playlist-container hidden" id="stats-playlist-container">
               <!-- Populated by JavaScript for statistics dashboard -->
             </div>
+        <!-- THIRD COLUMN: SYSTEM MESSAGES / NOTIFICATIONS -->
+        <section class="grid-col notifications-section">
+          <div id="toast-history-panel" class="glass-card">
+            <div class="card-header" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <h2><i class="fa-solid fa-bell"></i> 消息动态 / Activity</h2>
+              <span id="toast-history-badge" class="history-badge hidden">0</span>
+            </div>
+            
+            <!-- Filter Tabs -->
+            <div class="toast-history-filters" style="display: flex; gap: 4px; padding: 6px 0 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); flex-wrap: wrap;">
+              <button type="button" class="toast-filter-btn active" data-filter="all">全部</button>
+              <button type="button" class="toast-filter-btn" data-filter="add">点歌</button>
+              <button type="button" class="toast-filter-btn" data-filter="pin">优先</button>
+              <button type="button" class="toast-filter-btn" data-filter="delete">删除</button>
+              <button type="button" class="toast-filter-btn" data-filter="next">切歌</button>
+              <button type="button" class="toast-filter-btn" data-filter="other">其他</button>
+            </div>
+
+            <div class="toast-history-list" id="toast-history-list" style="margin-top: 10px; max-height: 550px; overflow-y: auto;">
+              <div class="no-history-msg">暂无历史消息记录</div>
+            </div>
           </div>
         </section>
       </main>
-
-      <!-- TOAST HISTORY DRAWER (Wider, no clear button, with filter buttons) -->
-      <div id="toast-history-panel" class="toast-history-panel hidden">
-        <div class="toast-history-header">
-          <h4><i class="fa-solid fa-bell"></i> 消息历史 / History</h4>
-          <button type="button" id="close-toast-history-btn" class="close-history-btn">&times;</button>
-        </div>
-        
-        <!-- Filter Tabs -->
-        <div class="toast-history-filters" style="display: flex; gap: 6px; padding: 10px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0,0,0,0.15); flex-wrap: wrap;">
-          <button type="button" class="toast-filter-btn active" data-filter="all">全部</button>
-          <button type="button" class="toast-filter-btn" data-filter="add">点歌</button>
-          <button type="button" class="toast-filter-btn" data-filter="pin">优先</button>
-          <button type="button" class="toast-filter-btn" data-filter="delete">删除</button>
-          <button type="button" class="toast-filter-btn" data-filter="next">切歌</button>
-          <button type="button" class="toast-filter-btn" data-filter="other">其他</button>
-        </div>
-
-        <div class="toast-history-list" id="toast-history-list">
-          <div class="no-history-msg">暂无历史消息记录</div>
-        </div>
-      </div>
-
-      <!-- TOAST HISTORY TRIGGER BUTTON -->
-      <button type="button" id="toast-history-trigger-btn" class="toast-history-trigger pulse-glow" title="查看消息历史">
-        <i class="fa-solid fa-bell"></i>
-        <span id="toast-history-badge" class="history-badge hidden">0</span>
-      </button>
     </div>
   </div>
 

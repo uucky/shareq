@@ -718,6 +718,37 @@ function setupEventListeners() {
     adminDropdownMenu.classList.add("hidden");
   });
 
+  // Compact Mode Toggle
+  const compactToggleBtn = document.getElementById("dropdown-compact-toggle-btn");
+  const savedCompact = localStorage.getItem("shareq_compact_mode") || "false";
+
+  const updateCompactButtonUI = (isCompact) => {
+    if (!compactToggleBtn) return;
+    if (isCompact) {
+      compactToggleBtn.innerHTML = `<i class="fa-solid fa-expand"></i> 切换为常规模式`;
+    } else {
+      compactToggleBtn.innerHTML = `<i class="fa-solid fa-compress"></i> 切换为紧凑模式`;
+    }
+  };
+
+  if (savedCompact === "true") {
+    document.body.classList.add("compact-mode");
+    updateCompactButtonUI(true);
+  } else {
+    document.body.classList.remove("compact-mode");
+    updateCompactButtonUI(false);
+  }
+
+  if (compactToggleBtn) {
+    compactToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isCompactNow = document.body.classList.toggle("compact-mode");
+      localStorage.setItem("shareq_compact_mode", isCompactNow ? "true" : "false");
+      updateCompactButtonUI(isCompactNow);
+      adminDropdownMenu.classList.add("hidden");
+    });
+  }
+
   // Dropdown Stats Button
   const dropdownStatsBtn = document.getElementById("dropdown-stats-btn");
   if (dropdownStatsBtn) {
@@ -750,22 +781,27 @@ function setupEventListeners() {
   });
 
   // Toast History Panel Events
+  // Toast History Panel Events
   const toastTriggerBtn = document.getElementById("toast-history-trigger-btn");
   const toastPanel = document.getElementById("toast-history-panel");
   const closeToastHistoryBtn = document.getElementById("close-toast-history-btn");
 
-  toastTriggerBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isHidden = toastPanel.classList.toggle("hidden");
-    if (!isHidden) {
-      unreadToastsCount = 0;
-      updateToastHistoryUI();
-    }
-  });
+  if (toastTriggerBtn && toastPanel) {
+    toastTriggerBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = toastPanel.classList.toggle("hidden");
+      if (!isHidden) {
+        unreadToastsCount = 0;
+        updateToastHistoryUI();
+      }
+    });
+  }
 
-  closeToastHistoryBtn.addEventListener("click", () => {
-    toastPanel.classList.add("hidden");
-  });
+  if (closeToastHistoryBtn && toastPanel) {
+    closeToastHistoryBtn.addEventListener("click", () => {
+      toastPanel.classList.add("hidden");
+    });
+  }
 
   // Toast filter tabs
   document.querySelectorAll(".toast-filter-btn").forEach(btn => {
@@ -779,7 +815,7 @@ function setupEventListeners() {
 
   // Dismiss toast history panel when clicking anywhere else
   document.addEventListener("click", (e) => {
-    if (!toastPanel.classList.contains("hidden")) {
+    if (toastPanel && toastTriggerBtn && !toastPanel.classList.contains("hidden")) {
       const isClickInside = toastTriggerBtn.contains(e.target) || toastPanel.contains(e.target);
       if (!isClickInside) {
         toastPanel.classList.add("hidden");
@@ -980,7 +1016,7 @@ function renderPlaylist() {
     const canDelete = isUserAdmin || isSongOwner;
 
     const row = document.createElement("div");
-    row.className = `song-card ${song.prioritized ? 'pinned-song' : ''}`;
+    row.className = "song-card";
     
     row.innerHTML = `
       <div class="song-index-col">${i}</div>
@@ -997,7 +1033,7 @@ function renderPlaylist() {
         </div>
       </div>
       <div class="song-actions-col">
-        <button type="button" class="action-icon-btn priority-btn" ${song.prioritized ? 'disabled title="已优先"' : 'title="设为优先 (移到最前)"'} data-id="${song.id}">
+        <button type="button" class="action-icon-btn priority-btn" title="置顶这首歌 (移到最前)" data-id="${song.id}">
           <i class="fa-solid fa-angles-up"></i>
         </button>
         ${canDelete ? `
@@ -1009,11 +1045,9 @@ function renderPlaylist() {
     `;
 
     // Priority bind
-    if (!song.prioritized) {
-      row.querySelector(".priority-btn").addEventListener("click", () => {
-        socket.emit("prioritize-song", { songId: song.id });
-      });
-    }
+    row.querySelector(".priority-btn").addEventListener("click", () => {
+      socket.emit("prioritize-song", { songId: song.id });
+    });
 
     // Delete bind
     if (canDelete) {
@@ -1907,13 +1941,15 @@ function downloadSessionArchive() {
 function updateToastHistoryUI() {
   const badge = document.getElementById("toast-history-badge");
   const list = document.getElementById("toast-history-list");
-  if (!badge || !list) return;
+  if (!list) return;
 
-  if (unreadToastsCount > 0) {
-    badge.textContent = unreadToastsCount;
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
+  if (badge) {
+    if (unreadToastsCount > 0) {
+      badge.textContent = unreadToastsCount;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
   }
 
   // Get active filter

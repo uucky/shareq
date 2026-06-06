@@ -437,7 +437,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Apply Priority (优先) - Move right after now playing (index 1)
+  // Apply Priority (置顶) - Move right after now playing (index 1)
   socket.on('prioritize-song', ({ songId }) => {
     const userData = activeConnections.get(socket.id);
     if (!userData) return;
@@ -450,8 +450,6 @@ io.on('connection', (socket) => {
       pushHistory(room);
       const song = room.songs[songIndex];
 
-      // Unconditionally apply priority
-      song.prioritized = true;
       if (songIndex > 1) {
         const [movedSong] = room.songs.splice(songIndex, 1);
         room.songs.splice(1, 0, movedSong);
@@ -459,7 +457,7 @@ io.on('connection', (socket) => {
       io.to(userData.roomId).emit('playlist-updated', room.songs);
       io.to(userData.roomId).emit('system-message', {
         type: 'pin',
-        text: `${userData.username} 优先了《${song.title}》`
+        text: `${userData.username} 置顶了《${song.title}》`
       });
 
       room.updatedAt = Date.now();

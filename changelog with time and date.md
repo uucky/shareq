@@ -1,5 +1,13 @@
 # ShareQ KTV - Change Log with Time and Date
 
+## [2026-06-06 22:30:00]
+### Refactored & Optimized on Dev
+- **3-Column Grid Layout**: Redesigned the main dashboard view into a 3-column layout on desktop viewports. System notifications/activity dynamic stream has been relocated to the static 3rd column on the right.
+- **Priority (置顶) Re-implementation**: Shifted logic to a pure, non-stateful action. Pinned songs are instantly re-sorted to the top of the upcoming list (index 1), with no highlighted styling or flags.
+- **Floating Emoji VFX scaling and area expansion**: Restored float container boundaries to full viewport (`100vw` by `100vh`) to allow drifting across the whole screen. Scaled desktop emoji sizes down from 5x to 3x (`--emoji-scale: 3`).
+- **Compact Song List**: Reduced card padding from `12px 16px` to `8px 12px` and list gap from `8px` to `6px` for space efficiency.
+- **UI Compact Mode Toggle**: Added a menu option to toggle a site-wide compact mode (`body.compact-mode`) which shrinks fonts and container paddings, saved and restored via localStorage.
+
 ## [2026-06-06 22:15:00]
 ### Added on Master
 - **Interactive Gift Mute Switch**: Added mute button in `public/index.html` (within the interactive panel header). Persists `isSoundMuted` state in local storage (`shareq_gift_muted`). Excludes essential singing chimes.

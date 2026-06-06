@@ -833,7 +833,7 @@ body.light-theme .brand-header h1 {
 /* ROOM VIEW MAIN LAYOUT GRID */
 .room-main-grid {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 360px 1fr 340px;
   gap: 20px;
   align-items: start;
 }
@@ -1412,10 +1412,10 @@ body.light-theme .brand-header h1 {
 .playlist-container {
   max-height: 480px;
   overflow-y: auto;
-  padding: 16px 0;
+  padding: 10px 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* Song Item Rows */
@@ -1424,8 +1424,8 @@ body.light-theme .brand-header h1 {
   align-items: center;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
   transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -1455,7 +1455,7 @@ body.light-theme .brand-header h1 {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .song-title-text {
@@ -1481,7 +1481,7 @@ body.light-theme .brand-header h1 {
   gap: 8px;
   font-size: 0.82rem;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .song-requester-avatar {
@@ -1712,10 +1712,9 @@ body.light-theme .brand-header h1 {
 .floating-reaction-container {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 550px;
-  height: 70vh;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
   z-index: 90;
   overflow: hidden;
@@ -1723,8 +1722,8 @@ body.light-theme .brand-header h1 {
 
 @media (max-width: 768px) {
   .floating-reaction-container {
-    width: 100%;
-    max-width: 320px;
+    width: 100vw;
+    height: 100vh;
   }
 }
 
@@ -1735,7 +1734,7 @@ body.light-theme .brand-header h1 {
   animation: floatUp 3.2s forwards ease-in-out;
   opacity: 0.9;
   user-select: none;
-  --emoji-scale: 5;
+  --emoji-scale: 3;
 }
 
 @media (max-width: 768px) {
@@ -1809,9 +1808,23 @@ body.light-theme .brand-header h1 {
 }
 
 /* RESPONSIVE LAYOUT */
+@media (max-width: 1280px) {
+  .room-main-grid {
+    grid-template-columns: 320px 1fr;
+    gap: 16px;
+  }
+  .notifications-section {
+    grid-column: span 2;
+  }
+}
+
 @media (max-width: 980px) {
   .room-main-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .notifications-section {
+    grid-column: span 1;
   }
 }
 
@@ -2571,5 +2584,116 @@ body.light-theme .song-requester-avatar {
 body.light-theme .badge-user {
   background: linear-gradient(135deg, #0d9488 0%, #db2777 100%) !important;
   box-shadow: 0 0 10px rgba(219, 39, 119, 0.2) !important;
+}
+
+/* COMPACT MODE FOR ALL SCREEN SIZES */
+body.compact-mode {
+  --font-scale: 0.92;
+}
+
+body.compact-mode,
+body.compact-mode button,
+body.compact-mode input,
+body.compact-mode select,
+body.compact-mode textarea {
+  font-size: 92% !important;
+}
+
+body.compact-mode .room-main-grid {
+  gap: 12px !important;
+}
+
+body.compact-mode .grid-col {
+  gap: 12px !important;
+}
+
+body.compact-mode .glass-card {
+  padding: 14px 16px !important;
+  border-radius: 8px !important;
+}
+
+body.compact-mode .song-card {
+  padding: 5px 8px !important;
+  border-radius: 6px !important;
+}
+
+body.compact-mode .playlist-container {
+  gap: 4px !important;
+  padding: 6px 0 !important;
+}
+
+body.compact-mode .room-header {
+  padding: 10px 16px !important;
+}
+
+body.compact-mode .avatar-circle-sm {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 0.95rem !important;
+}
+
+body.compact-mode .avatar-circle-md {
+  width: 42px !important;
+  height: 42px !important;
+  font-size: 1.3rem !important;
+}
+
+body.compact-mode .profile-widget {
+  padding: 4px 8px !important;
+  gap: 8px !important;
+}
+
+body.compact-mode .widget-name {
+  font-size: 0.82rem !important;
+}
+
+body.compact-mode .widget-id {
+  font-size: 0.72rem !important;
+}
+
+body.compact-mode .now-playing-panel {
+  padding: 14px 16px !important;
+}
+
+body.compact-mode .playing-music-note-large {
+  font-size: 2.2rem !important;
+}
+
+body.compact-mode .playing-title-large {
+  font-size: 1.15rem !important;
+}
+
+body.compact-mode .playing-singer-large {
+  font-size: 0.88rem !important;
+}
+
+body.compact-mode .input-wrapper input {
+  padding: 8px 12px 8px 36px !important;
+}
+
+body.compact-mode .input-wrapper .input-icon {
+  left: 10px !important;
+}
+
+body.compact-mode .input-group {
+  margin-bottom: 10px !important;
+}
+
+body.compact-mode .btn {
+  padding: 8px 16px !important;
+}
+
+body.compact-mode .reaction-buttons-grid button {
+  padding: 8px !important;
+  font-size: 0.85rem !important;
+}
+
+body.compact-mode .toast-history-list {
+  max-height: 400px !important;
+}
+
+body.compact-mode .history-toast-item {
+  padding: 8px 10px !important;
+  margin-bottom: 6px !important;
 }
 
