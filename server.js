@@ -548,7 +548,7 @@ io.on('connection', (socket) => {
   });
 
   // Promote/Demote Moderator
-  socket.on('promote-moderator', ({ targetUserId, active }) => {
+  socket.on('promote-moderator', ({ targetUserId }) => {
     const userData = activeConnections.get(socket.id);
     if (!userData) return;
 
@@ -558,9 +558,9 @@ io.on('connection', (socket) => {
     if (userData.userId !== room.hostUserId) return; // Only host
 
     const idx = room.moderatorUserIds.indexOf(targetUserId);
-    if (active && idx === -1) {
+    if (idx === -1) {
       room.moderatorUserIds.push(targetUserId);
-    } else if (!active && idx !== -1) {
+    } else {
       room.moderatorUserIds.splice(idx, 1);
     }
 

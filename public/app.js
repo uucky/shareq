@@ -932,7 +932,6 @@ function renderPlaylist() {
       <div class="song-details-col">
         <div class="song-title-row">
           <span class="song-title-text">${song.title}</span>
-          ${song.prioritized ? `<span class="pin-badge"><i class="fa-solid fa-angles-up"></i> 优先</span>` : ''}
         </div>
         <div class="song-singer-text">${song.singer || '未知歌手'}</div>
         <div class="song-requester-row">
@@ -942,7 +941,7 @@ function renderPlaylist() {
         </div>
       </div>
       <div class="song-actions-col">
-        <button type="button" class="action-icon-btn priority-btn ${song.prioritized ? 'pin-active' : ''}" ${song.prioritized ? 'disabled title="已优先 (将在下一首播放)"' : 'title="设为优先 (移到最前)"'} data-id="${song.id}">
+        <button type="button" class="action-icon-btn priority-btn" ${song.prioritized ? 'disabled title="已优先"' : 'title="设为优先 (移到最前)"'} data-id="${song.id}">
           <i class="fa-solid fa-angles-up"></i>
         </button>
         ${canDelete ? `
@@ -1119,7 +1118,7 @@ function renderMembers() {
       if (currentIsHost) {
         actionButtonsHtml += `
           <button type="button" class="member-action-btn btn-action-mod" title="${isMod ? '取消房管' : '设为房管'}" data-userid="${u.userId}" data-ismod="${isMod}">
-            <i class="fa-solid ${isMod ? 'fa-shield-minus' : 'fa-shield'}"></i>
+            <i class="fa-solid ${isMod ? 'fa-shield-slash' : 'fa-shield-halved'}"></i>
           </button>
           <button type="button" class="member-action-btn btn-action-transfer" title="移交主持人" data-userid="${u.userId}">
             <i class="fa-solid fa-crown"></i>
@@ -1158,8 +1157,7 @@ function renderMembers() {
       if (currentIsHost) {
         row.querySelector(".btn-action-mod").addEventListener("click", () => {
           socket.emit("promote-moderator", {
-            targetUserId: u.userId,
-            active: !isMod
+            targetUserId: u.userId
           });
         });
 
@@ -1195,7 +1193,7 @@ function updateNowPlaying() {
     const currentSong = playlist[0];
     titleElem.textContent = currentSong.title;
     singerElem.textContent = currentSong.singer ? `${currentSong.singer}` : "未指定歌手";
-    userElem.innerHTML = `<span style="display:inline-block; width:16px; height:16px; vertical-align:middle; margin-right:4px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${currentSong.requestedBy}`;
+    userElem.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:6px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${currentSong.requestedBy}`;
     
     // Accompaniment link setting
     if (currentSong.link) {
