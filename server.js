@@ -46,6 +46,7 @@ let roomsData = {};
 //   [socketId]: { roomId, username, avatar, userId }
 // }
 const activeConnections = new Map();
+const pendingDedications = new Map();
 
 // Helper: Push state to undo stack
 function pushHistory(room) {
@@ -174,6 +175,13 @@ function getRoomUsers(roomId) {
     }
   }
   return users;
+}
+
+// Helper: Get avatar for user by userId inside a specific room
+function getUserAvatar(roomId, userId) {
+  const users = getRoomUsers(roomId);
+  const user = users.find(u => u.userId === userId);
+  return user ? user.avatar : "🎤";
 }
 
 // Helper: Get or create room
@@ -323,6 +331,110 @@ io.on('connection', (socket) => {
     });
 
     saveRooms();
+  });
+
+  // Dedicate Song Request
+  socket.on('dedicate-song', ({ title, singer, link, targetUserId }) => {
+    const userData = activeConnections.get(socket.id);
+    if (!userData) return;
+
+    const room = roomsData[userData.roomId];
+    if (!room) return;
+
+    let targetSocketId = null;
+    let targetUsername = "";
+    for (const [sId, conn] of activeConnections.entries()) {
+      if (conn.userId === targetUserId && conn.roomId === userData.roomId) {
+        targetSocketId = sId;
+        targetUsername = conn.username;
+        break;
+      }
+    }
+
+    if (targetSocketId) {
+      const dedicationId = 'dedicate_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      
+      pendingDedications.set(dedicationId, {
+        roomId: userData.roomId,
+        fromUserId: userData.userId,
+        fromUsername: userData.username,
+        fromSocketId: socket.id,
+        targetUserId,
+        targetUsername,
+        title,
+        singer,
+        link
+      });
+
+      io.to(targetSocketId).emit('dedication-request', {
+        id: dedicationId,
+        fromUserId: userData.userId,
+        fromUsername: userData.username,
+        title,
+        singer,
+        link
+      });
+
+      socket.emit('dedication-pending', { targetUsername, title });
+    } else {
+      socket.emit('dedication-failed', { message: '该用户已下线或不存在' });
+    }
+  });
+
+  // Respond to Dedication
+  socket.on('respond-dedication', ({ id, accept }) => {
+    const dedication = pendingDedications.get(id);
+    if (!dedication) return;
+
+    pendingDedications.delete(id);
+
+    const room = roomsData[dedication.roomId];
+    if (!room) return;
+
+    const senderSocket = io.sockets.sockets.get(dedication.fromSocketId);
+
+    if (accept) {
+      pushHistory(room);
+
+      const songId = Math.random().toString(36).substring(2, 9);
+      const newSong = {
+        id: songId,
+        title: String(dedication.title).trim(),
+        singer: String(dedication.targetUsername).trim(),
+        link: String(dedication.link || '').trim(),
+        requestedBy: dedication.targetUsername,
+        requestedByAvatar: getUserAvatar(dedication.roomId, dedication.targetUserId),
+        prioritized: false,
+        reactions: { rose: 0, clap: 0, egg: 0, shoe: 0 },
+        createdAt: Date.now(),
+        dedicatedBy: dedication.fromUsername
+      };
+
+      room.songs.push(newSong);
+      room.updatedAt = Date.now();
+      saveRooms();
+
+      io.to(dedication.roomId).emit('playlist-updated', room.songs);
+      
+      io.to(dedication.roomId).emit('system-message', {
+        type: 'add',
+        text: `🎵 ${dedication.targetUsername} 接受了 ${dedication.fromUsername} 的指名点歌《${dedication.title}》`
+      });
+
+      if (senderSocket) {
+        senderSocket.emit('dedication-response-notify', {
+          type: 'accept',
+          text: `🎉 ${dedication.targetUsername} 接受了你指名点播的《${dedication.title}》！`
+        });
+      }
+    } else {
+      if (senderSocket) {
+        senderSocket.emit('dedication-response-notify', {
+          type: 'decline',
+          text: `❌ ${dedication.targetUsername} 拒绝了你指名点播的《${dedication.title}》`
+        });
+      }
+    }
   });
 
   // Apply Priority (优先) - Move right after now playing (index 1)

@@ -292,6 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("users-updated", (users) => {
     roomUsers = users;
     renderMembers();
+    updateDedicateSelect();
   });
 
   socket.on("roles-updated", (data) => {
@@ -303,6 +304,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   socket.on("system-message", (msg) => {
     showToast(msg.type, msg.text);
+  });
+
+  socket.on("dedication-request", (data) => {
+    showDedicationRequestModal(data);
+  });
+
+  socket.on("dedication-response-notify", (data) => {
+    showToast("dedicate", data.text);
+  });
+
+  socket.on("dedication-failed", (data) => {
+    showToast("delete", `❌ 指名点歌失败: ${data.message}`);
+  });
+
+  socket.on("dedication-pending", (data) => {
+    showToast("info", `📤 已向 ${data.targetUsername} 发送指名点歌《${data.title}》，等待接受...`);
   });
 
   socket.on("session-ended", () => {
@@ -485,19 +502,30 @@ function setupEventListeners() {
     const titleVal = document.getElementById("song-title").value.trim();
     const singerVal = document.getElementById("song-singer").value.trim();
     const linkVal = document.getElementById("song-link").value.trim();
+    const dedicateUserIdVal = document.getElementById("song-dedicate").value;
 
     if (!titleVal) return;
 
-    socket.emit("add-song", {
-      title: titleVal,
-      singer: singerVal,
-      link: linkVal
-    });
+    if (dedicateUserIdVal) {
+      socket.emit("dedicate-song", {
+        title: titleVal,
+        singer: singerVal,
+        link: linkVal,
+        targetUserId: dedicateUserIdVal
+      });
+    } else {
+      socket.emit("add-song", {
+        title: titleVal,
+        singer: singerVal,
+        link: linkVal
+      });
+    }
 
     // Reset inputs
     document.getElementById("song-title").value = "";
     document.getElementById("song-singer").value = "";
     document.getElementById("song-link").value = "";
+    document.getElementById("song-dedicate").value = "";
   });
 
   // Profile modal toggle
@@ -964,6 +992,7 @@ function renderPlaylist() {
         <div class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
           <span class="song-requester-name">${song.requestedBy}</span>
+          ${song.dedicatedBy ? `<span class="dedicate-tag"><i class="fa-solid fa-gift"></i> ${song.dedicatedBy} 指名</span>` : ''}
           ${song.link ? `<a class="song-accompaniment-link" href="${song.link}" target="_blank" title="伴奏链接"><i class="fa-solid fa-link"></i> 伴奏</a>` : ''}
         </div>
       </div>
@@ -1222,6 +1251,16 @@ function updateNowPlaying() {
     singerElem.textContent = currentSong.singer ? `${currentSong.singer}` : "未指定歌手";
     userElem.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:6px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${currentSong.requestedBy}`;
     
+    const dedicateBadge = document.getElementById("playing-dedicate-badge");
+    if (dedicateBadge) {
+      if (currentSong.dedicatedBy) {
+        dedicateBadge.innerHTML = `<i class="fa-solid fa-gift"></i> ${currentSong.dedicatedBy} 指名`;
+        dedicateBadge.classList.remove("hidden");
+      } else {
+        dedicateBadge.classList.add("hidden");
+      }
+    }
+
     // Accompaniment link setting
     if (currentSong.link) {
       linkBtn.href = currentSong.link;
@@ -1246,6 +1285,11 @@ function updateNowPlaying() {
     singerElem.textContent = "点歌后即可在此开启演唱";
     userElem.textContent = "--";
     linkBtn.classList.add("hidden");
+
+    const dedicateBadge = document.getElementById("playing-dedicate-badge");
+    if (dedicateBadge) {
+      dedicateBadge.classList.add("hidden");
+    }
 
     document.getElementById("count-rose").textContent = 0;
     document.getElementById("count-clap").textContent = 0;
@@ -1304,10 +1348,12 @@ function showToast(type, text) {
   toastHistory.push({ type, text, time: Date.now() });
 
   const toastPanel = document.getElementById("toast-history-panel");
-  if (toastPanel && toastPanel.classList.contains("hidden")) {
-    unreadToastsCount++;
-  } else {
-    unreadToastsCount = 0;
+  if (type === 'dedicate') {
+    if (toastPanel && toastPanel.classList.contains("hidden")) {
+      unreadToastsCount++;
+    } else {
+      unreadToastsCount = 0;
+    }
   }
   updateToastHistoryUI();
 
@@ -1323,6 +1369,7 @@ function showToast(type, text) {
   else if (type === 'delete') icon = "fa-trash-can";
   else if (type === 'shuffle') icon = "fa-shuffle";
   else if (type === 'next') icon = "fa-forward-step";
+  else if (type === 'dedicate') icon = "fa-gift";
 
   toast.innerHTML = `
     <span class="toast-icon"><i class="fa-solid ${icon}"></i></span>
@@ -2165,5 +2212,69 @@ function renderHistoryRooms() {
     item.appendChild(joinBtn);
 
     list.appendChild(item);
+  });
+}
+
+// Update the dropdown list of users you can dedicate a song to
+function updateDedicateSelect() {
+  const select = document.getElementById("song-dedicate");
+  if (!select) return;
+  
+  // Save current selection to restore it if possible
+  const prevVal = select.value;
+  
+  // Clear but keep first option
+  select.innerHTML = '<option value="">-- 自己唱 (默认) --</option>';
+  
+  roomUsers.forEach(u => {
+    if (u.userId !== currentUserId) {
+      const opt = document.createElement("option");
+      opt.value = u.userId;
+      opt.textContent = `${u.username} (ID: ${u.userId})`;
+      select.appendChild(opt);
+    }
+  });
+  
+  if (prevVal) {
+    select.value = prevVal;
+  }
+}
+
+// Show the interactive dedication request modal
+function showDedicationRequestModal(data) {
+  // Add to toast history with type "dedicate" so the unread badge is triggered!
+  showToast("dedicate", `🎁 ${data.fromUsername} 为你指名点播了《${data.title}》`);
+
+  const overlay = document.createElement("div");
+  overlay.className = "singing-turn-overlay dedication-overlay";
+  overlay.id = `dedication-overlay-${data.id}`;
+  overlay.innerHTML = `
+    <div class="singing-turn-card animate-glow" style="border: 2px solid var(--color-secondary); box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);">
+      <div class="singing-icon" style="background: linear-gradient(135deg, #8b5cf6, #ec4899); box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);"><i class="fa-solid fa-gift"></i></div>
+      <h2 style="background: linear-gradient(135deg, #00f0ff, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.8rem; margin: 15px 0 10px;">收到指名点歌！</h2>
+      <p style="font-size: 1.05rem; color: var(--text-primary); font-weight: bold; margin-bottom: 8px;">
+        ${data.fromUsername} 为你点了一首 ${data.singer ? data.singer : '未知歌手'} 的《${data.title}》
+      </p>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.4;">
+        接受后，这首歌将以你的名义加入待播歌单。
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
+        <button type="button" class="btn btn-primary accept-dedication-btn" style="flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer;">接受</button>
+        <button type="button" class="btn decline-dedication-btn" style="flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">拒绝</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".accept-dedication-btn").addEventListener("click", () => {
+    socket.emit("respond-dedication", { id: data.id, accept: true });
+    overlay.classList.add("fade-out");
+    setTimeout(() => overlay.remove(), 400);
+  });
+
+  overlay.querySelector(".decline-dedication-btn").addEventListener("click", () => {
+    socket.emit("respond-dedication", { id: data.id, accept: false });
+    overlay.classList.add("fade-out");
+    setTimeout(() => overlay.remove(), 400);
   });
 }

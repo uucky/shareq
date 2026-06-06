@@ -294,7 +294,7 @@ p {
   text-transform: none;
 }
 
-input[type="text"] {
+input[type="text"], select.custom-select {
   width: 100%;
   background: rgba(8, 5, 18, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -307,9 +307,20 @@ input[type="text"] {
   outline: none;
 }
 
-input[type="text"]:focus {
+input[type="text"]:focus, select.custom-select:focus {
   border-color: var(--color-secondary);
   box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
+}
+
+select.custom-select {
+  padding-left: 42px;
+  appearance: none;
+  cursor: pointer;
+}
+
+select.custom-select option {
+  background: #140b2a;
+  color: white;
 }
 
 .input-with-action {
@@ -1284,6 +1295,20 @@ body.light-theme .brand-header h1 {
   color: #ef4444;
 }
 
+.dedicate-tag {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #c084fc;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+}
+
 /* PLAYLIST TABS & CARD HEADER BUTTONS (打乱歌单 + 切歌/下一首) */
 .playlist-card-header {
   display: flex;
@@ -1665,6 +1690,7 @@ body.light-theme .brand-header h1 {
 .toast-delete .toast-icon { color: var(--color-danger); }
 .toast-shuffle .toast-icon { color: var(--color-secondary); }
 .toast-next .toast-icon { color: var(--color-success); }
+.toast-dedicate .toast-icon { color: #c084fc; }
 
 .toast-text {
   flex-grow: 1;
@@ -1884,15 +1910,20 @@ body.light-theme .input-group label {
   color: var(--text-secondary);
 }
 
-body.light-theme input[type="text"] {
+body.light-theme input[type="text"], body.light-theme select.custom-select {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.12);
   color: var(--text-primary);
 }
 
-body.light-theme input[type="text"]:focus {
+body.light-theme input[type="text"]:focus, body.light-theme select.custom-select:focus {
   border-color: var(--color-secondary);
   box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+}
+
+body.light-theme select.custom-select option {
+  background: white;
+  color: var(--text-primary);
 }
 
 body.light-theme .tab-container,
@@ -1953,6 +1984,12 @@ body.light-theme .btn-reaction-mute.muted {
   background: rgba(239, 68, 68, 0.1) !important;
   border-color: rgba(239, 68, 68, 0.2) !important;
   color: #ef4444 !important;
+}
+
+body.light-theme .dedicate-tag {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.2);
+  color: #7c3aed;
 }
 
 body.light-theme .suggestion-tag {
@@ -2145,6 +2182,7 @@ body.light-theme .history-toast-item {
 .history-toast-item.toast-delete { border-left-color: var(--color-danger); }
 .history-toast-item.toast-shuffle { border-left-color: var(--color-secondary); }
 .history-toast-item.toast-next { border-left-color: var(--color-success); }
+.history-toast-item.toast-dedicate { border-left-color: #c084fc; }
 
 .history-toast-time {
   font-size: 0.65rem;

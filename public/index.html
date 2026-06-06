@@ -221,6 +221,16 @@
                 </div>
               </div>
 
+              <div class="input-group">
+                <label for="song-dedicate">指名点歌给某人 <span class="optional">(可选)</span></label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-gift input-icon"></i>
+                  <select id="song-dedicate" class="custom-select">
+                    <option value="">-- 自己唱 (默认) --</option>
+                  </select>
+                </div>
+              </div>
+
               <button type="submit" class="btn btn-primary btn-block submit-btn" id="confirm-request-btn">
                 <span class="btn-text">确认点歌 / Add to Queue</span>
                 <span class="btn-glow"></span>
@@ -271,8 +281,9 @@
                 <h3 id="playing-title" class="playing-title-large">暂无演唱歌曲</h3>
                 <p id="playing-singer" class="playing-singer-large">点歌后即可在歌单开始</p>
                 <div class="playing-meta-info">
-                  <div class="playing-request-by-large">
+                  <div class="playing-request-by-large" style="display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px;">
                     点歌人: <span id="playing-user-badge" class="badge-user">--</span>
+                    <span id="playing-dedicate-badge" class="dedicate-tag hidden"></span>
                   </div>
                   <!-- Reaction Count Stats Display -->
                   <div class="playing-reaction-summary" id="playing-reaction-summary">
