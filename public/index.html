@@ -23,7 +23,7 @@
     <div id="login-view" class="view-card">
       <div class="brand-header animate-glow">
         <div class="logo-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-        <h1 id="lobby-logo" style="cursor: pointer;" title="ShareQ 共享卡拉OK歌单系统 by uucky">ShareQ</h1>
+        <h1 id="lobby-logo" style="cursor: pointer;" title="ShareQ 共享卡拉OK歌单系统 by uucky">ShareQ <span style="font-size: 0.4em; opacity: 0.5; font-weight: normal; vertical-align: middle;">测试服</span></h1>
         <p class="subtitle">KTV 实时点歌歌单</p>
       </div>
 
@@ -50,7 +50,7 @@
             <label for="setup-username">歌手昵称</label>
             <div class="input-with-action">
               <input type="text" id="setup-username" placeholder="请输入你的大名..." maxlength="15">
-              <button type="button" id="randomize-name-btn" class="btn-text">随机名字</button>
+              <button type="button" id="randomize-name-btn" class="btn-text">随机</button>
             </div>
           </div>
         </div>
@@ -118,7 +118,7 @@
           </button>
           <div class="room-logo" id="brand-logo-egg" title="ShareQ 共享卡拉OK歌单系统 by uucky" style="cursor: pointer;">
             <i class="fa-solid fa-microphone-lines"></i>
-            <span class="brand-text">ShareQ</span>
+            <span class="brand-text">ShareQ <span style="font-size: 0.4em; opacity: 0.5; font-weight: normal; vertical-align: middle;">测试服</span></span>
           </div>
           <div class="room-badge" id="room-badge-btn" title="点击复制分享链接">
             <span class="badge-label">房间号:</span>
@@ -149,6 +149,9 @@
               <!-- General options for everyone -->
               <button type="button" id="dropdown-theme-toggle-btn" class="dropdown-item">
                 <i class="fa-solid fa-sun"></i> 切换为亮色/暗色
+              </button>
+              <button type="button" id="dropdown-compact-toggle-btn" class="dropdown-item">
+                <i class="fa-solid fa-compress"></i> 切换紧凑模式 (Compact)
               </button>
               <button type="button" id="dropdown-stats-btn" class="dropdown-item">
                 <i class="fa-solid fa-chart-simple"></i> 歌会数据统计 (Stats)
@@ -221,6 +224,16 @@
                 </div>
               </div>
 
+              <div class="input-group">
+                <label for="song-dedicate">指名点歌给某人 <span class="optional">(可选)</span></label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-gift input-icon"></i>
+                  <select id="song-dedicate" class="custom-select">
+                    <option value="">-- 自己唱 (默认) --</option>
+                  </select>
+                </div>
+              </div>
+
               <button type="submit" class="btn btn-primary btn-block submit-btn" id="confirm-request-btn">
                 <span class="btn-text">确认点歌 / Add to Queue</span>
                 <span class="btn-glow"></span>
@@ -263,29 +276,25 @@
               </a>
             </div>
             
-            <div class="playing-content-wrapper" id="now-playing-content">
-              <div class="playing-music-note-large">
-                <i class="fa-solid fa-compact-disc spin-animation"></i>
+            <div class="playing-content-wrapper" id="now-playing-content" style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; width:100%; padding: 10px 0;">
+              <!-- Left side: Avatar -->
+              <div class="playing-icon-wrapper" style="position:relative; width: 110px; height: 110px; flex-shrink:0; display:flex; justify-content:center; align-items:center;">
+                <div id="playing-music-note" class="pulse-glow" style="font-size:60px; animation: spin 8s linear infinite; display:flex; justify-content:center; align-items:center; width:100%; height:100%; background: rgba(255, 255, 255, 0.1); border-radius: 50%; border: 3px solid var(--color-primary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);">🎤</div>
+                <img id="playing-avatar-disc" src="" class="playing-avatar-disc hidden" style="position:absolute; inset:0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-primary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); animation: spin 8s linear infinite;">
               </div>
-              <div class="playing-details-large">
-                <h3 id="playing-title" class="playing-title-large">暂无演唱歌曲</h3>
-                <p id="playing-singer" class="playing-singer-large">点歌后即可在歌单开始</p>
-                <div class="playing-meta-info">
-                  <div class="playing-request-by-large">
-                    点歌人: <span id="playing-user-badge" class="badge-user">--</span>
-                  </div>
-                  <!-- Reaction Count Stats Display -->
-                  <div class="playing-reaction-summary" id="playing-reaction-summary">
-                    <span class="stat-reaction" title="收到的玫瑰"><span class="reaction-emoji">🌹</span> <span id="count-rose">0</span></span>
-                    <span class="stat-reaction" title="收到的掌声"><span class="reaction-emoji">👏</span> <span id="count-clap">0</span></span>
-                    <span class="stat-reaction" title="被扔的鸡蛋"><span class="reaction-emoji">🥚</span> <span id="count-egg">0</span></span>
-                    <span class="stat-reaction" title="被扔的皮鞋"><span class="reaction-emoji">👞</span> <span id="count-shoe">0</span></span>
-                  </div>
+              
+              <!-- Center side: Details -->
+              <div class="playing-details-large" style="flex-grow:1; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                <h3 id="playing-title" class="playing-title-large" style="font-size: 2.2rem; margin-bottom: 4px;">等待点歌...</h3>
+                <p id="playing-singer" class="playing-singer-large" style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 12px;">点歌后即可在歌单开始</p>
+                <div class="playing-request-by-large" style="display: flex; justify-content: center; width: 100%;">
+                  <span id="playing-user-badge" class="badge-user-singing" style="background: linear-gradient(135deg, #00f0ff, #ff2a85); padding: 6px 16px; border-radius: 20px; color: white; font-weight: bold; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-microphone"></i> --</span>
+                  <span id="playing-dedicate-badge" class="dedicate-tag hidden" style="margin-left: 10px; vertical-align: middle;"></span>
                 </div>
               </div>
               
-              <!-- Large Visualizer Bars -->
-              <div class="music-visualizer-large" id="visualizer-bars">
+              <!-- Right side: Visualizer -->
+              <div class="music-visualizer-large" id="visualizer-bars" style="flex-shrink:0; transform: scale(0.9);">
                 <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
               </div>
             </div>
@@ -321,10 +330,10 @@
               <!-- Tabs Navigation -->
               <div class="playlist-tabs">
                 <button type="button" class="playlist-tab-btn active" id="tab-upcoming-btn">
-                  <i class="fa-solid fa-list-ul"></i> 待播歌单 <span id="song-count-badge" class="counter-badge">0 首</span>
+                  <i class="fa-solid fa-list-ul"></i> 已点 <span id="song-count-badge" class="counter-badge">0 首</span>
                 </button>
                 <button type="button" class="playlist-tab-btn" id="tab-history-btn">
-                  <i class="fa-solid fa-clock-rotate-left"></i> 已唱历史 <span id="history-count-badge" class="counter-badge">0 首</span>
+                  <i class="fa-solid fa-clock-rotate-left"></i> 已唱 <span id="history-count-badge" class="counter-badge">0 首</span>
                 </button>
                 <button type="button" class="playlist-tab-btn hidden" id="tab-stats-btn">
                   <i class="fa-solid fa-chart-simple"></i> 歌会统计 / Stats
@@ -336,8 +345,8 @@
                 <button type="button" id="shuffle-btn" class="btn-action btn-action-orange" title="打乱所有未优先歌曲的顺序">
                   <i class="fa-solid fa-shuffle"></i> 打乱歌单
                 </button>
-                <button type="button" id="next-btn" class="btn-action btn-action-purple hidden" title="切歌 / 播放下一首 (仅主持人/房管)">
-                  <i class="fa-solid fa-forward-step"></i> 切歌 / 下一首
+                <button type="button" id="next-btn" class="btn-action btn-action-purple hidden" title="切歌 (仅主持人/房管)">
+                  <i class="fa-solid fa-forward-step"></i> 切歌
                 </button>
               </div>
             </div>
@@ -354,38 +363,48 @@
             <div class="playlist-container hidden" id="stats-playlist-container">
               <!-- Populated by JavaScript for statistics dashboard -->
             </div>
+          </div> <!-- Close playlist-card -->
+        </section> <!-- Close playlist-section -->
+
+        <!-- THIRD COLUMN: SYSTEM MESSAGES / NOTIFICATIONS -->
+        <section class="grid-col notifications-section">
+          <!-- 消息 (Pending Dedications) -->
+          <div id="messages-panel" class="glass-card" style="padding:16px;">
+            <div class="card-header" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <h2 style="font-size:1.1rem;"><i class="fa-solid fa-envelope"></i> 消息</h2>
+              <span id="toast-history-badge" class="history-badge hidden">0</span>
+            </div>
+            <div id="pending-dedications-list" style="display:flex; flex-direction:column; gap:8px;">
+              <!-- Javascript populates this -->
+            </div>
+          </div>
+          
+          <!-- 动态 (Activity Feed) -->
+          <div id="activity-feed-panel" style="flex:1; display:flex; flex-direction:column;">
+            <h3 style="font-size:0.9rem; opacity:0.6; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">动态</h3>
+            
+            <!-- Filter Tabs -->
+            <div class="toast-history-filters" style="display: flex; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); flex-wrap: wrap; margin-bottom:12px;">
+              <a href="#" class="toast-filter-link active" data-filter="all">全部</a>
+              <a href="#" class="toast-filter-link" data-filter="add">点歌</a>
+              <a href="#" class="toast-filter-link" data-filter="pin">优先</a>
+              <a href="#" class="toast-filter-link" data-filter="delete">删除</a>
+              <a href="#" class="toast-filter-link" data-filter="next">切歌</a>
+            </div>
+
+            <div class="toast-history-list" id="toast-history-list" style="flex:1; overflow-y: auto; display:flex; flex-direction:column; gap:4px;">
+              <div class="no-history-msg">暂无动态记录</div>
+            </div>
           </div>
         </section>
       </main>
-
-      <!-- TOAST HISTORY DRAWER (Wider, no clear button, with filter buttons) -->
-      <div id="toast-history-panel" class="toast-history-panel hidden">
-        <div class="toast-history-header">
-          <h4><i class="fa-solid fa-bell"></i> 消息历史 / History</h4>
-          <button type="button" id="close-toast-history-btn" class="close-history-btn">&times;</button>
-        </div>
-        
-        <!-- Filter Tabs -->
-        <div class="toast-history-filters" style="display: flex; gap: 6px; padding: 10px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0,0,0,0.15); flex-wrap: wrap;">
-          <button type="button" class="toast-filter-btn active" data-filter="all">全部</button>
-          <button type="button" class="toast-filter-btn" data-filter="add">点歌</button>
-          <button type="button" class="toast-filter-btn" data-filter="pin">优先</button>
-          <button type="button" class="toast-filter-btn" data-filter="delete">删除</button>
-          <button type="button" class="toast-filter-btn" data-filter="next">切歌</button>
-          <button type="button" class="toast-filter-btn" data-filter="other">其他</button>
-        </div>
-
-        <div class="toast-history-list" id="toast-history-list">
-          <div class="no-history-msg">暂无历史消息记录</div>
-        </div>
-      </div>
-
-      <!-- TOAST HISTORY TRIGGER BUTTON -->
-      <button type="button" id="toast-history-trigger-btn" class="toast-history-trigger pulse-glow" title="查看消息历史">
-        <i class="fa-solid fa-bell"></i>
-        <span id="toast-history-badge" class="history-badge hidden">0</span>
-      </button>
     </div>
+  </div>
+
+  <!-- Mobile Floating Bell Button -->
+  <div class="toast-history-trigger hidden-desktop" id="mobile-toast-trigger" title="消息与动态">
+    <i class="fa-solid fa-bell"></i>
+    <span class="history-badge hidden" id="mobile-toast-badge">0</span>
   </div>
 
   <!-- MODAL: EDIT USER PROFILE -->
@@ -467,7 +486,7 @@
         <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 20px 0;">共享卡拉OK歌单系统</p>
         <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: left; font-size: 0.88rem; line-height: 1.7; color: var(--text-secondary);">
           <div style="margin-bottom: 8px;"><i class="fa-solid fa-user" style="color: var(--color-primary); width: 18px;"></i> &nbsp;作者：<strong>uucky</strong></div>
-          <div style="margin-bottom: 8px;"><i class="fa-solid fa-code-branch" style="color: var(--color-secondary); width: 18px;"></i> &nbsp;版本：<strong>v1.3.0</strong></div>
+          <div style="margin-bottom: 8px;"><i class="fa-solid fa-code-branch" style="color: var(--color-secondary); width: 18px;"></i> &nbsp;版本：<strong>v1.7.9-dev (测试服)</strong></div>
           <div style="margin-bottom: 8px;"><i class="fa-solid fa-server" style="color: #00f0ff; width: 18px;"></i> &nbsp;技术栈：Node.js · Express · Socket.IO</div>
           <div><i class="fa-solid fa-heart" style="color: #ff2a85; width: 18px;"></i> &nbsp;专为多人 KTV 聚会实时点歌设计</div>
         </div>

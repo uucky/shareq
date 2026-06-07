@@ -2,4 +2,4 @@
 trigger: always_on
 ---
 
-add change log every time after a change to a changelog with time and date.md
+每次更新后都把更新写入 changelog.md

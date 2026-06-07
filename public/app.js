@@ -217,6 +217,19 @@ let lastSingingSongId = "";
 
 // Initialize Elements
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Rename tabs
+  const tabUp = document.getElementById("tab-upcoming-btn");
+  if(tabUp) tabUp.innerHTML = '<i class="fa-solid fa-list-ul"></i> 已点 <span id="song-count-badge" class="counter-badge">0 首</span>';
+  const tabHist = document.getElementById("tab-history-btn");
+  if(tabHist) tabHist.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> 已唱 <span id="history-count-badge" class="counter-badge">0 首</span>';
+
+  // 2. Dev badge
+  const brandTitle = document.querySelector(".brand-title");
+  if(brandTitle) brandTitle.innerHTML = 'ShareQ <span style="font-size: 0.4em; opacity: 0.5; font-weight: normal; vertical-align: middle;">测试服</span>';
+
+  // DOM injection code removed as changes are now in index.html
+  updateMessagesEmptyState();
+
   // Generate or Load Persistent User ID (6-digit numeric ID)
   currentUserId = localStorage.getItem("shareq_userid");
   if (!currentUserId) {
@@ -226,7 +239,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load username & avatar from localStorage
   currentUsername = localStorage.getItem("shareq_username") || "";
-  currentAvatar = localStorage.getItem("shareq_avatar") || "🎤";
+  currentAvatar = localStorage.getItem("shareq_avatar");
+  if (!currentAvatar) {
+    const randomIdx = Math.floor(Math.random() * emojis.length);
+    currentAvatar = emojis[randomIdx];
+    localStorage.setItem("shareq_avatar", currentAvatar);
+  }
 
   // Pre-fill fields
   document.getElementById("setup-username").value = currentUsername;
@@ -238,8 +256,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize Socket.io
   socket = io();
 
+  socket.on("connect", () => {
+    const lastRoom = localStorage.getItem("shareq_last_room");
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRoom = urlParams.get("room");
+    if (lastRoom && (!urlRoom || urlRoom === lastRoom) && currentUsername) {
+      socket.emit("join-room", {
+        roomId: lastRoom,
+        username: currentUsername,
+        avatar: currentAvatar,
+        userId: currentUserId
+      });
+    }
+  });
+
+  socket.on("error", (msg) => {
+    if(msg && msg.includes("不存在")) localStorage.removeItem("shareq_last_room");
+  });
+
   // Socket Core Receivers
   socket.on("room-data", (data) => {
+    localStorage.setItem("shareq_last_room", data.roomId);
     currentRoomId = data.roomId;
     playlist = data.songs;
     historyPlaylist = data.alreadySung || [];
@@ -292,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("users-updated", (users) => {
     roomUsers = users;
     renderMembers();
+    updateDedicateSelect();
   });
 
   socket.on("roles-updated", (data) => {
@@ -303,6 +341,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   socket.on("system-message", (msg) => {
     showToast(msg.type, msg.text);
+  });
+
+  socket.on("dedication-request", (data) => {
+    showDedicationRequestModal(data);
+  });
+
+  socket.on("dedication-response-notify", (data) => {
+    showToast("dedicate", data.text);
+  });
+
+  socket.on("dedication-failed", (data) => {
+    showToast("delete", `❌ 指名点歌失败: ${data.message}`);
+  });
+
+  socket.on("dedication-pending", (data) => {
+    showToast("info", `📤 已向 ${data.targetUsername} 发送指名点歌《${data.title}》，等待接受...`);
   });
 
   socket.on("session-ended", () => {
@@ -398,31 +452,19 @@ function setupEventListeners() {
     handleLoginJoin("create");
   });
 
-  // Leave Room trigger with confirm alert
+  // Leave Room trigger
   document.getElementById("leave-room-btn").addEventListener("click", () => {
-    if (confirm("您确定要离开当前 KTV 点歌房返回首页吗？")) {
-      window.location.href = window.location.origin + window.location.pathname;
-    }
+    localStorage.removeItem("shareq_last_room");
+    window.location.href = window.location.origin + window.location.pathname;
   });
 
-  // Double click User Count Badge -> Hidden Egg
-  document.getElementById("users-stack-trigger").addEventListener("dblclick", () => {
-    openArchiveModal();
-  });
-
-  // Click logo -> Tooltip info
-  const showLogoTip = () => {
-    showToast("shuffle", "🎵 ShareQ 共享卡拉OK歌单系统 by uucky");
-  };
-
-  const lobbyLogo = document.getElementById("lobby-logo");
-  if (lobbyLogo) {
-    lobbyLogo.addEventListener("click", showLogoTip);
-  }
-
+  // Click logo -> Back to home
   const brandLogo = document.getElementById("brand-logo-egg");
   if (brandLogo) {
-    brandLogo.addEventListener("click", showLogoTip);
+    brandLogo.addEventListener("click", () => {
+      localStorage.removeItem("shareq_last_room");
+      window.location.href = window.location.origin + window.location.pathname;
+    });
   }
 
   // Corner Easter Egg Button -> openArchiveModal
@@ -437,7 +479,10 @@ function setupEventListeners() {
   const setupFileInput = document.getElementById("setup-avatar-file");
   const setupUploadBtn = document.getElementById("setup-upload-avatar-btn");
   if (setupUploadBtn && setupFileInput) {
-    setupUploadBtn.addEventListener("click", () => setupFileInput.click());
+    setupUploadBtn.addEventListener("click", () => {
+      setupFileInput.value = ""; // Clear value so selecting same file always fires change event
+      setupFileInput.click();
+    });
     setupFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -454,7 +499,10 @@ function setupEventListeners() {
   const modalFileInput = document.getElementById("modal-avatar-file");
   const modalUploadBtn = document.getElementById("modal-upload-avatar-btn");
   if (modalUploadBtn && modalFileInput) {
-    modalUploadBtn.addEventListener("click", () => modalFileInput.click());
+    modalUploadBtn.addEventListener("click", () => {
+      modalFileInput.value = ""; // Clear value so selecting same file always fires change event
+      modalFileInput.click();
+    });
     modalFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -485,19 +533,30 @@ function setupEventListeners() {
     const titleVal = document.getElementById("song-title").value.trim();
     const singerVal = document.getElementById("song-singer").value.trim();
     const linkVal = document.getElementById("song-link").value.trim();
+    const dedicateUserIdVal = document.getElementById("song-dedicate").value;
 
     if (!titleVal) return;
 
-    socket.emit("add-song", {
-      title: titleVal,
-      singer: singerVal,
-      link: linkVal
-    });
+    if (dedicateUserIdVal) {
+      socket.emit("dedicate-song", {
+        title: titleVal,
+        singer: singerVal,
+        link: linkVal,
+        targetUserId: dedicateUserIdVal
+      });
+    } else {
+      socket.emit("add-song", {
+        title: titleVal,
+        singer: singerVal,
+        link: linkVal
+      });
+    }
 
     // Reset inputs
     document.getElementById("song-title").value = "";
     document.getElementById("song-singer").value = "";
     document.getElementById("song-link").value = "";
+    document.getElementById("song-dedicate").value = "";
   });
 
   // Profile modal toggle
@@ -522,6 +581,32 @@ function setupEventListeners() {
 
     modal.classList.remove("hidden");
   });
+
+  // Mobile Toast Notification Trigger
+  const mobileToastTrigger = document.getElementById("mobile-toast-trigger");
+  if (mobileToastTrigger) {
+    mobileToastTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const section = document.querySelector(".notifications-section");
+      if (section) {
+        section.classList.toggle("open-on-mobile");
+        if (section.classList.contains("open-on-mobile")) {
+          unreadToastsCount = 0;
+          updateToastHistoryUI();
+        }
+      }
+    });
+
+    // Click outside to close
+    document.addEventListener("click", (e) => {
+      const section = document.querySelector(".notifications-section");
+      if (section && section.classList.contains("open-on-mobile")) {
+        if (!section.contains(e.target) && !mobileToastTrigger.contains(e.target)) {
+          section.classList.remove("open-on-mobile");
+        }
+      }
+    });
+  }
 
   // Modal Cancel
   document.getElementById("close-modal-btn").addEventListener("click", () => modal.classList.add("hidden"));
@@ -690,6 +775,37 @@ function setupEventListeners() {
     adminDropdownMenu.classList.add("hidden");
   });
 
+  // Compact Mode Toggle
+  const compactToggleBtn = document.getElementById("dropdown-compact-toggle-btn");
+  const savedCompact = localStorage.getItem("shareq_compact_mode") || "false";
+
+  const updateCompactButtonUI = (isCompact) => {
+    if (!compactToggleBtn) return;
+    if (isCompact) {
+      compactToggleBtn.innerHTML = `<i class="fa-solid fa-expand"></i> 切换为常规模式`;
+    } else {
+      compactToggleBtn.innerHTML = `<i class="fa-solid fa-compress"></i> 切换为紧凑模式`;
+    }
+  };
+
+  if (savedCompact === "true") {
+    document.body.classList.add("compact-mode");
+    updateCompactButtonUI(true);
+  } else {
+    document.body.classList.remove("compact-mode");
+    updateCompactButtonUI(false);
+  }
+
+  if (compactToggleBtn) {
+    compactToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isCompactNow = document.body.classList.toggle("compact-mode");
+      localStorage.setItem("shareq_compact_mode", isCompactNow ? "true" : "false");
+      updateCompactButtonUI(isCompactNow);
+      adminDropdownMenu.classList.add("hidden");
+    });
+  }
+
   // Dropdown Stats Button
   const dropdownStatsBtn = document.getElementById("dropdown-stats-btn");
   if (dropdownStatsBtn) {
@@ -722,28 +838,34 @@ function setupEventListeners() {
   });
 
   // Toast History Panel Events
+  // Toast History Panel Events
   const toastTriggerBtn = document.getElementById("toast-history-trigger-btn");
   const toastPanel = document.getElementById("toast-history-panel");
   const closeToastHistoryBtn = document.getElementById("close-toast-history-btn");
 
-  toastTriggerBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isHidden = toastPanel.classList.toggle("hidden");
-    if (!isHidden) {
-      unreadToastsCount = 0;
-      updateToastHistoryUI();
-    }
-  });
+  if (toastTriggerBtn && toastPanel) {
+    toastTriggerBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = toastPanel.classList.toggle("hidden");
+      if (!isHidden) {
+        unreadToastsCount = 0;
+        updateToastHistoryUI();
+      }
+    });
+  }
 
-  closeToastHistoryBtn.addEventListener("click", () => {
-    toastPanel.classList.add("hidden");
-  });
+  if (closeToastHistoryBtn && toastPanel) {
+    closeToastHistoryBtn.addEventListener("click", () => {
+      toastPanel.classList.add("hidden");
+    });
+  }
 
   // Toast filter tabs
-  document.querySelectorAll(".toast-filter-btn").forEach(btn => {
+  document.querySelectorAll(".toast-filter-link").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      document.querySelectorAll(".toast-filter-btn").forEach(b => b.classList.remove("active"));
+      e.preventDefault();
+      document.querySelectorAll(".toast-filter-link").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       updateToastHistoryUI();
     });
@@ -751,7 +873,7 @@ function setupEventListeners() {
 
   // Dismiss toast history panel when clicking anywhere else
   document.addEventListener("click", (e) => {
-    if (!toastPanel.classList.contains("hidden")) {
+    if (toastPanel && toastTriggerBtn && !toastPanel.classList.contains("hidden")) {
       const isClickInside = toastTriggerBtn.contains(e.target) || toastPanel.contains(e.target);
       if (!isClickInside) {
         toastPanel.classList.add("hidden");
@@ -952,23 +1074,30 @@ function renderPlaylist() {
     const canDelete = isUserAdmin || isSongOwner;
 
     const row = document.createElement("div");
-    row.className = `song-card ${song.prioritized ? 'pinned-song' : ''}`;
+    row.className = "song-card";
+    if (window.lastPinnedSongId === song.id) {
+      row.classList.add("slide-in-top-anim");
+      window.lastPinnedSongId = null;
+      setTimeout(() => {
+        if(row && row.classList) row.classList.remove("slide-in-top-anim");
+      }, 1000);
+    }
     
     row.innerHTML = `
       <div class="song-index-col">${i}</div>
-      <div class="song-details-col">
-        <div class="song-title-row">
-          <span class="song-title-text">${song.title}</span>
-        </div>
-        <div class="song-singer-text">${song.singer || '未知歌手'}</div>
-        <div class="song-requester-row">
+      <div class="song-details-col song-single-row">
+        <span class="song-title-text">${song.title}</span>
+        <span class="song-divider">•</span>
+        <span class="song-singer-text">${song.singer || '未知歌手'}</span>
+        <span class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
-          <span class="song-requester-name">${song.requestedBy}</span>
+          <span class="song-requester-name">${formatUsername(song.requestedBy)}</span>
+          ${song.dedicatedBy ? `<span class="dedicate-tag"><i class="fa-solid fa-gift"></i> ${song.dedicatedBy} 指名</span>` : ''}
           ${song.link ? `<a class="song-accompaniment-link" href="${song.link}" target="_blank" title="伴奏链接"><i class="fa-solid fa-link"></i> 伴奏</a>` : ''}
-        </div>
+        </span>
       </div>
       <div class="song-actions-col">
-        <button type="button" class="action-icon-btn priority-btn" ${song.prioritized ? 'disabled title="已优先"' : 'title="设为优先 (移到最前)"'} data-id="${song.id}">
+        <button type="button" class="action-icon-btn priority-btn" title="置顶这首歌 (移到最前)" data-id="${song.id}">
           <i class="fa-solid fa-angles-up"></i>
         </button>
         ${canDelete ? `
@@ -980,11 +1109,10 @@ function renderPlaylist() {
     `;
 
     // Priority bind
-    if (!song.prioritized) {
-      row.querySelector(".priority-btn").addEventListener("click", () => {
-        socket.emit("prioritize-song", { songId: song.id });
-      });
-    }
+    row.querySelector(".priority-btn").addEventListener("click", () => {
+      window.lastPinnedSongId = song.id;
+      socket.emit("prioritize-song", { songId: song.id });
+    });
 
     // Delete bind
     if (canDelete) {
@@ -1075,22 +1203,21 @@ function renderHistory() {
     const reactCount = song.reactions || { rose: 0, clap: 0, egg: 0, shoe: 0 };
     
     item.innerHTML = `
-      <div class="song-index-col"><i class="fa-solid fa-circle-check" style="color: var(--color-secondary);"></i></div>
-      <div class="song-details-col">
-        <div class="song-title-row">
-          <span class="song-title-text" style="text-decoration: line-through; opacity: 0.6;">${song.title}</span>
-        </div>
-        <div class="song-singer-text">${song.singer || '未知歌手'}</div>
-        <div class="song-requester-row">
+      <div class="song-index-col">${historyPlaylist.length - i}</div>
+      <div class="song-details-col song-single-row">
+        <span class="song-title-text" style="opacity: 0.6;">${song.title}</span>
+        <span class="song-divider">•</span>
+        <span class="song-singer-text">${song.singer || '未知歌手'}</span>
+        <span class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
-          <span class="song-requester-name">${song.requestedBy}</span>
-          <span class="history-time" style="margin-left: auto;"><i class="fa-solid fa-circle-play"></i> 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}</span>
-        </div>
-        <div class="playing-reaction-summary" style="margin-top: 8px;">
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">🌹</span> ${reactCount.rose || 0}</span>
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">👏</span> ${reactCount.clap || 0}</span>
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">🥚</span> ${reactCount.egg || 0}</span>
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">👞</span> ${reactCount.shoe || 0}</span>
+          <span class="song-requester-name">${formatUsername(song.requestedBy)}</span>
+        </span>
+        <span class="history-time" style="margin-left: auto; font-size: 0.78rem; opacity: 0.75;"><i class="fa-solid fa-circle-play"></i> 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}</span>
+        <div class="playing-reaction-summary" style="margin-top: 4px; width: 100%;">
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">🌹</span> ${reactCount.rose || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">👏</span> ${reactCount.clap || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">🥚</span> ${reactCount.egg || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">👞</span> ${reactCount.shoe || 0}</span>
         </div>
       </div>
     `;
@@ -1220,8 +1347,18 @@ function updateNowPlaying() {
     const currentSong = playlist[0];
     titleElem.textContent = currentSong.title;
     singerElem.textContent = currentSong.singer ? `${currentSong.singer}` : "未指定歌手";
-    userElem.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:6px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${currentSong.requestedBy}`;
+    userElem.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:6px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${formatUsername(currentSong.requestedBy)}`;
     
+    const dedicateBadge = document.getElementById("playing-dedicate-badge");
+    if (dedicateBadge) {
+      if (currentSong.dedicatedBy) {
+        dedicateBadge.innerHTML = `<i class="fa-solid fa-gift"></i> ${currentSong.dedicatedBy} 指名`;
+        dedicateBadge.classList.remove("hidden");
+      } else {
+        dedicateBadge.classList.add("hidden");
+      }
+    }
+
     // Accompaniment link setting
     if (currentSong.link) {
       linkBtn.href = currentSong.link;
@@ -1239,13 +1376,40 @@ function updateNowPlaying() {
 
     // Show visualizer bars and spinning CD animation
     document.getElementById("visualizer-bars").style.opacity = "1";
-    document.querySelector(".playing-music-note-large i").style.animationPlayState = "running";
+    const noteIcon = document.getElementById("playing-music-note");
+    const avatarDisc = document.getElementById("playing-avatar-disc");
+    if(noteIcon && avatarDisc) {
+      // Look up current avatar of the singer from active room users list first, then fall back to requestedByAvatar
+      let av = "";
+      const singerUser = roomUsers.find(u => u.username === currentSong.requestedBy);
+      if (singerUser && singerUser.avatar) {
+        av = singerUser.avatar;
+      } else {
+        av = currentSong.requestedByAvatar || "🎤";
+      }
+
+      const isImage = av.startsWith("data:image") || av.startsWith("http://") || av.startsWith("https://");
+      if (isImage) {
+        noteIcon.classList.add("hidden");
+        avatarDisc.src = av;
+        avatarDisc.classList.remove("hidden");
+      } else {
+        avatarDisc.classList.add("hidden");
+        noteIcon.classList.remove("hidden");
+        noteIcon.innerHTML = av || "🎤";
+      }
+    }
   } else {
     // Empty state
     titleElem.textContent = "暂无演唱歌曲";
     singerElem.textContent = "点歌后即可在此开启演唱";
     userElem.textContent = "--";
     linkBtn.classList.add("hidden");
+
+    const dedicateBadge = document.getElementById("playing-dedicate-badge");
+    if (dedicateBadge) {
+      dedicateBadge.classList.add("hidden");
+    }
 
     document.getElementById("count-rose").textContent = 0;
     document.getElementById("count-clap").textContent = 0;
@@ -1304,12 +1468,17 @@ function showToast(type, text) {
   toastHistory.push({ type, text, time: Date.now() });
 
   const toastPanel = document.getElementById("toast-history-panel");
-  if (toastPanel && toastPanel.classList.contains("hidden")) {
-    unreadToastsCount++;
-  } else {
-    unreadToastsCount = 0;
+  if (type === 'dedicate') {
+    if (toastPanel && toastPanel.classList.contains("hidden")) {
+      unreadToastsCount++;
+    } else {
+      unreadToastsCount = 0;
+    }
   }
   updateToastHistoryUI();
+
+  // Only show floating toast popups for direct 'dedicate' notifications
+  if (type !== 'dedicate') return;
 
   const container = document.getElementById("notification-center");
   if (!container) return;
@@ -1323,6 +1492,7 @@ function showToast(type, text) {
   else if (type === 'delete') icon = "fa-trash-can";
   else if (type === 'shuffle') icon = "fa-shuffle";
   else if (type === 'next') icon = "fa-forward-step";
+  else if (type === 'dedicate') icon = "fa-gift";
 
   toast.innerHTML = `
     <span class="toast-icon"><i class="fa-solid ${icon}"></i></span>
@@ -1860,17 +2030,29 @@ function downloadSessionArchive() {
 function updateToastHistoryUI() {
   const badge = document.getElementById("toast-history-badge");
   const list = document.getElementById("toast-history-list");
-  if (!badge || !list) return;
+  if (!list) return;
 
-  if (unreadToastsCount > 0) {
-    badge.textContent = unreadToastsCount;
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
+  if (badge) {
+    if (unreadToastsCount > 0) {
+      badge.textContent = unreadToastsCount > 99 ? '99+' : unreadToastsCount;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  }
+
+  const mobileBadge = document.getElementById("mobile-toast-badge");
+  if (mobileBadge) {
+    if (unreadToastsCount > 0) {
+      mobileBadge.textContent = unreadToastsCount > 99 ? '99+' : unreadToastsCount;
+      mobileBadge.classList.remove("hidden");
+    } else {
+      mobileBadge.classList.add("hidden");
+    }
   }
 
   // Get active filter
-  const activeBtn = document.querySelector(".toast-filter-btn.active");
+  const activeBtn = document.querySelector(".toast-filter-link.active");
   const filter = activeBtn ? activeBtn.dataset.filter : "all";
 
   list.innerHTML = "";
@@ -1893,8 +2075,11 @@ function updateToastHistoryUI() {
     return;
   }
 
-  for (let i = filteredHistory.length - 1; i >= 0; i--) {
-    const item = filteredHistory[i];
+  // Display newest items on top
+  const displayedHistory = [...filteredHistory].reverse();
+
+  for (let i = 0; i < displayedHistory.length; i++) {
+    const item = displayedHistory[i];
     const el = document.createElement("div");
     el.className = `history-toast-item toast-${item.type}`;
     
@@ -1904,13 +2089,14 @@ function updateToastHistoryUI() {
     else if (item.type === 'delete') icon = "fa-trash-can";
     else if (item.type === 'shuffle') icon = "fa-shuffle";
     else if (item.type === 'next') icon = "fa-forward-step";
+    else if (item.type === 'dedicate') icon = "fa-gift";
+
+    const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
     el.innerHTML = `
-      <div class="toast-item-header" style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; opacity:0.75; margin-bottom:4px;">
-        <span><i class="fa-solid ${icon}"></i> ${item.type.toUpperCase()}</span>
-        <span>${new Date(item.time).toLocaleTimeString()}</span>
-      </div>
-      <div class="toast-item-body" style="font-size:0.85rem;">${item.text}</div>
+      <span class="chat-badge toast-badge-${item.type}" style="font-size:0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold; flex-shrink: 0;"><i class="fa-solid ${icon}"></i></span>
+      <span class="chat-text" style="font-size:0.85rem; line-height: 1.4; word-break: break-all; flex-grow: 1;">${item.text}</span>
+      <span class="chat-time" style="font-size:0.7rem; opacity:0.4; margin-left: 6px; flex-shrink: 0; align-self: flex-start; margin-top: 2px;">${timeStr}</span>
     `;
     list.appendChild(el);
   }
@@ -2098,8 +2284,8 @@ function saveRoomToHistory(roomId) {
   // Push new room to the front
   rooms.unshift({ roomId: roomId, joinedAt: Date.now() });
 
-  // Limit list to last 5 rooms
-  rooms = rooms.slice(0, 5);
+  // Limit list to last 10 rooms
+  rooms = rooms.slice(0, 10);
 
   localStorage.setItem("shareq_history_rooms", JSON.stringify(rooms));
 }
@@ -2166,4 +2352,107 @@ function renderHistoryRooms() {
 
     list.appendChild(item);
   });
+}
+
+// Update the dropdown list of users you can dedicate a song to
+function updateDedicateSelect() {
+  const select = document.getElementById("song-dedicate");
+  if (!select) return;
+  
+  // Save current selection to restore it if possible
+  const prevVal = select.value;
+  
+  // Clear but keep first option
+  select.innerHTML = '<option value="">-- 自己唱 (默认) --</option>';
+  
+  roomUsers.forEach(u => {
+    if (u.userId !== currentUserId) {
+      const opt = document.createElement("option");
+      opt.value = u.userId;
+      opt.textContent = `${u.username} (ID: ${u.userId})`;
+      select.appendChild(opt);
+    }
+  });
+  
+  if (prevVal) {
+    select.value = prevVal;
+  }
+}
+
+// Show the interactive dedication request modal
+function updateMessagesEmptyState() {
+  const list = document.getElementById("pending-dedications-list");
+  if (!list) return;
+  const cards = list.querySelectorAll(".pending-dedication-card");
+  let emptyMsg = document.getElementById("no-messages-msg");
+  if (cards.length === 0) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement("div");
+      emptyMsg.id = "no-messages-msg";
+      emptyMsg.className = "no-history-msg";
+      emptyMsg.textContent = "暂无消息";
+      list.appendChild(emptyMsg);
+    }
+    emptyMsg.style.display = "block";
+  } else {
+    if (emptyMsg) emptyMsg.style.display = "none";
+  }
+}
+
+function showDedicationRequestModal(data) {
+  // Add to toast history with type "dedicate" so it appears in the activity feed
+  showToast("dedicate", `🎁 ${data.fromUsername} 为你指名点播了《${data.title}》`);
+
+  const list = document.getElementById("pending-dedications-list");
+  if (!list) return;
+
+  const card = document.createElement("div");
+  card.className = "pending-dedication-card animate-glow";
+  card.style = "background: var(--card-bg); border-radius: 8px; padding: 12px; border-left: 4px solid var(--color-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 8px;";
+  card.innerHTML = `
+    <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">
+      <i class="fa-solid fa-gift" style="color: var(--color-primary);"></i> ${data.fromUsername} 
+      <span style="font-weight: normal; font-size: 0.85rem; color: var(--text-secondary);">为你指名</span>
+    </div>
+    <div style="font-size: 0.9rem; margin-bottom: 12px;">
+      《${data.title}》- ${data.singer || '未知'}
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" class="btn btn-primary accept-dedication-btn" style="flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px;">接受</button>
+      <button type="button" class="btn decline-dedication-btn" style="flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">拒绝</button>
+    </div>
+  `;
+  list.appendChild(card);
+  updateMessagesEmptyState();
+
+  // Update badge count
+  const badge = document.getElementById("pending-dedications-badge");
+  if (badge) {
+    badge.textContent = list.querySelectorAll(".pending-dedication-card").length;
+    badge.classList.remove("hidden");
+  }
+
+  card.querySelector(".accept-dedication-btn").addEventListener("click", () => {
+    socket.emit("respond-dedication", { id: data.id, accept: true });
+    card.remove();
+    updateMessagesEmptyState();
+    if (badge && list.querySelectorAll(".pending-dedication-card").length === 0) badge.classList.add("hidden");
+    else if (badge) badge.textContent = list.querySelectorAll(".pending-dedication-card").length;
+  });
+
+  card.querySelector(".decline-dedication-btn").addEventListener("click", () => {
+    socket.emit("respond-dedication", { id: data.id, accept: false });
+    card.remove();
+    updateMessagesEmptyState();
+    if (badge && list.querySelectorAll(".pending-dedication-card").length === 0) badge.classList.add("hidden");
+    else if (badge) badge.textContent = list.querySelectorAll(".pending-dedication-card").length;
+  });
+}
+
+function formatUsername(name) {
+  if (!name) return "";
+  if (name.length > 20) {
+    return name.substring(0, 3) + "..." + name.substring(name.length - 3);
+  }
+  return name;
 }
