@@ -84,3 +84,4 @@ dev端： 旋转唱碟的小动画，改成点歌人的头像在转。 置顶歌
 关于ShareQ里的版本号和是否测试版的信息要及时更新
 加点测试
 13. 动态里，更新的显示在上面，更旧的显示在下面
+14. 可以把dev的内容推送到master了！changelog里要写清楚是dev还是master的更新，so if later i want to rollback to a version i would know which one to roll back
