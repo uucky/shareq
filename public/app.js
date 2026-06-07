@@ -447,31 +447,18 @@ function setupEventListeners() {
     handleLoginJoin("create");
   });
 
-  // Leave Room trigger with confirm alert
+  // Leave Room trigger
   document.getElementById("leave-room-btn").addEventListener("click", () => {
-    if (confirm("您确定要离开当前 KTV 点歌房返回首页吗？")) {
-      localStorage.removeItem("shareq_last_room");
-      window.location.href = window.location.origin + window.location.pathname;
-    }
+    localStorage.removeItem("shareq_last_room");
+    window.location.href = window.location.origin + window.location.pathname;
   });
 
-  // Click logo -> Tooltip info
-  const showLogoTip = () => {
-    showToast("shuffle", "🎵 ShareQ 共享卡拉OK歌单系统 by uucky");
-  };
-
-  const lobbyLogo = document.getElementById("lobby-logo");
-  if (lobbyLogo) {
-    lobbyLogo.addEventListener("click", showLogoTip);
-  }
-
+  // Click logo -> Back to home
   const brandLogo = document.getElementById("brand-logo-egg");
   if (brandLogo) {
     brandLogo.addEventListener("click", () => {
-      if (confirm("您确定要离开当前 KTV 点歌房返回首页吗？")) {
-        localStorage.removeItem("shareq_last_room");
-        window.location.href = window.location.origin + window.location.pathname;
-      }
+      localStorage.removeItem("shareq_last_room");
+      window.location.href = window.location.origin + window.location.pathname;
     });
   }
 
@@ -1370,14 +1357,16 @@ function updateNowPlaying() {
     const noteIcon = document.getElementById("playing-music-note");
     const avatarDisc = document.getElementById("playing-avatar-disc");
     if(noteIcon && avatarDisc) {
-      if (currentSong.requestedByAvatar && currentSong.requestedByAvatar.startsWith("data:image")) {
+      const av = currentSong.requestedByAvatar || "";
+      const isImage = av.startsWith("data:image") || av.startsWith("http://") || av.startsWith("https://");
+      if (isImage) {
         noteIcon.classList.add("hidden");
-        avatarDisc.src = currentSong.requestedByAvatar;
+        avatarDisc.src = av;
         avatarDisc.classList.remove("hidden");
       } else {
         avatarDisc.classList.add("hidden");
         noteIcon.classList.remove("hidden");
-        noteIcon.innerHTML = currentSong.requestedByAvatar || "🎤";
+        noteIcon.innerHTML = av || "🎤";
       }
     }
   } else {
