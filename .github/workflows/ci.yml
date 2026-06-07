@@ -114,12 +114,8 @@ jobs:
           flavor: latest=false
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=raw,value=${{ needs.test.outputs.tag || 'v0.0.0' }},enable=${{ needs.test.outputs.is_release == 'true' }}
             type=semver,pattern={{version}},value=${{ needs.test.outputs.tag || 'v0.0.0' }},enable=${{ needs.test.outputs.is_release == 'true' }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.test.outputs.tag || 'v0.0.0' }},enable=${{ needs.test.outputs.is_release == 'true' && !contains(needs.test.outputs.tag, '-') }}
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and publish Docker image
         uses: docker/build-push-action@v7
