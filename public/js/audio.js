@@ -118,7 +118,7 @@ export function playSound(type) {
     gainNode1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880.00, now + 0.1);
+    osc2.frequency.setValueAtTime(880.0, now + 0.1);
     gainNode2.gain.setValueAtTime(0, now + 0.1);
     gainNode2.gain.linearRampToValueAtTime(0.12, now + 0.15);
     gainNode2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);

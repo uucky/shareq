@@ -65,21 +65,27 @@ export function initializeSchema(db) {
       ON songs (room_id, list_type, position);
   `);
 
-  const schemaVersion = db.prepare(`
+  const schemaVersion = db
+    .prepare(
+      `
     SELECT value
     FROM schema_meta
     WHERE key = 'schema_version'
-  `).get();
+  `
+    )
+    .get();
 
   if (schemaVersion && schemaVersion.value !== String(SCHEMA_VERSION)) {
     throw new Error(`Unsupported SQLite schema version: ${schemaVersion.value}`);
   }
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO schema_meta (key, value)
     VALUES ('schema_version', ?)
     ON CONFLICT(key) DO NOTHING
-  `).run(String(SCHEMA_VERSION));
+  `
+  ).run(String(SCHEMA_VERSION));
 }
 
 function parseModeratorUserIds(value) {
@@ -166,11 +172,15 @@ export function loadRooms(databaseFile, logger = console) {
     initializeSchema(db);
 
     const rooms = {};
-    const roomRows = db.prepare(`
+    const roomRows = db
+      .prepare(
+        `
       SELECT id, host_user_id, moderator_user_ids_json, updated_at
       FROM rooms
       ORDER BY id
-    `).all();
+    `
+      )
+      .all();
 
     for (const row of roomRows) {
       rooms[row.id] = {
@@ -185,7 +195,9 @@ export function loadRooms(databaseFile, logger = console) {
       };
     }
 
-    const songRows = db.prepare(`
+    const songRows = db
+      .prepare(
+        `
       SELECT
         id,
         room_id,
@@ -205,7 +217,9 @@ export function loadRooms(databaseFile, logger = console) {
         shoe
       FROM songs
       ORDER BY room_id, list_type, position
-    `).all();
+    `
+      )
+      .all();
 
     for (const row of songRows) {
       const room = rooms[row.room_id];
@@ -238,10 +252,8 @@ export function createSaveData(roomsData, now = Date.now(), { cleanupEmptyRooms 
     const songs = room.songs || [];
     const alreadySung = room.alreadySung || [];
     const lastActive = room.updatedAt || now;
-    const isOldEmptyRoom = cleanupEmptyRooms
-      && songs.length === 0
-      && alreadySung.length === 0
-      && now - lastActive > EMPTY_ROOM_EXPIRY_MS;
+    const isOldEmptyRoom =
+      cleanupEmptyRooms && songs.length === 0 && alreadySung.length === 0 && now - lastActive > EMPTY_ROOM_EXPIRY_MS;
 
     if (isOldEmptyRoom) {
       cleanedCount++;

@@ -3,9 +3,9 @@ import { state } from './state.js';
 
 // Compute KTV Session statistics
 export function renderStats() {
-  const statsCont = document.getElementById("stats-playlist-container");
+  const statsCont = document.getElementById('stats-playlist-container');
   if (statsCont) {
-    const topSingerValCheck = document.getElementById("stat-top-singer");
+    const topSingerValCheck = document.getElementById('stat-top-singer');
     if (!topSingerValCheck) {
       statsCont.innerHTML = `
         <div class="stats-grid">
@@ -36,21 +36,21 @@ export function renderStats() {
     }
   }
 
-  const topSingerVal = document.getElementById("stat-top-singer");
-  const topSingerSub = document.getElementById("stat-top-singer-sub");
-  const topArtistVal = document.getElementById("stat-top-artist");
-  const topArtistSub = document.getElementById("stat-top-artist-sub");
-  const topSongVal = document.getElementById("stat-top-song");
-  const topSongSub = document.getElementById("stat-top-song-sub");
+  const topSingerVal = document.getElementById('stat-top-singer');
+  const topSingerSub = document.getElementById('stat-top-singer-sub');
+  const topArtistVal = document.getElementById('stat-top-artist');
+  const topArtistSub = document.getElementById('stat-top-artist-sub');
+  const topSongVal = document.getElementById('stat-top-song');
+  const topSongSub = document.getElementById('stat-top-song-sub');
 
-  const statsSingersList = document.getElementById("stats-singers-list");
-  const statsArtistsList = document.getElementById("stats-artists-list");
+  const statsSingersList = document.getElementById('stats-singers-list');
+  const statsArtistsList = document.getElementById('stats-artists-list');
 
   if (!topSingerVal || !statsSingersList) return;
 
   // 1. Calculate Top Singers (by completed history songs)
   const singerCounts = {};
-  state.historyPlaylist.forEach(s => {
+  state.historyPlaylist.forEach((s) => {
     const name = s.requestedBy;
     singerCounts[name] = (singerCounts[name] || 0) + 1;
   });
@@ -62,43 +62,51 @@ export function renderStats() {
     topSingerVal.textContent = topSingers[0].name;
     topSingerSub.textContent = `演唱了 ${topSingers[0].count} 首歌曲`;
   } else {
-    topSingerVal.textContent = "--";
-    topSingerSub.textContent = "暂无已唱歌曲";
+    topSingerVal.textContent = '--';
+    topSingerSub.textContent = '暂无已唱歌曲';
   }
 
   // Populate Singer list (top 5)
   clearChildren(statsSingersList);
   if (topSingers.length === 0) {
-    statsSingersList.appendChild(createElement("div", {
-      className: "no-stats-msg",
-      text: "暂无歌手数据",
-      style: "color:var(--text-muted); font-size:0.85rem; padding:10px;"
-    }));
+    statsSingersList.appendChild(
+      createElement('div', {
+        className: 'no-stats-msg',
+        text: '暂无歌手数据',
+        style: 'color:var(--text-muted); font-size:0.85rem; padding:10px;'
+      })
+    );
   } else {
     topSingers.slice(0, 5).forEach((item, idx) => {
-      const row = document.createElement("div");
-      row.className = "stats-row-item";
-      row.style.display = "flex";
-      row.style.justifyContent = "space-between";
-      row.style.padding = "8px 12px";
-      row.style.borderBottom = "1px solid var(--border-color)";
-      row.style.fontSize = "0.9rem";
-      
-      const medals = ["🥇", "🥈", "🥉", "🔹", "🔹"];
-      row.appendChild(createElement("span", {
-        className: "stats-rank",
-        text: medals[idx] || "🔹"
-      }));
-      row.appendChild(createElement("span", {
-        className: "stats-name",
-        text: item.name,
-        style: "flex:1; margin-left:10px;"
-      }));
-      row.appendChild(createElement("span", {
-        className: "stats-count",
-        text: `${item.count} 首`,
-        style: "font-weight:600; color:var(--color-primary);"
-      }));
+      const row = document.createElement('div');
+      row.className = 'stats-row-item';
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '8px 12px';
+      row.style.borderBottom = '1px solid var(--border-color)';
+      row.style.fontSize = '0.9rem';
+
+      const medals = ['🥇', '🥈', '🥉', '🔹', '🔹'];
+      row.appendChild(
+        createElement('span', {
+          className: 'stats-rank',
+          text: medals[idx] || '🔹'
+        })
+      );
+      row.appendChild(
+        createElement('span', {
+          className: 'stats-name',
+          text: item.name,
+          style: 'flex:1; margin-left:10px;'
+        })
+      );
+      row.appendChild(
+        createElement('span', {
+          className: 'stats-count',
+          text: `${item.count} 首`,
+          style: 'font-weight:600; color:var(--color-primary);'
+        })
+      );
       statsSingersList.appendChild(row);
     });
   }
@@ -123,42 +131,50 @@ export function renderStats() {
     topArtistVal.textContent = topArtists[0].name;
     topArtistSub.textContent = `被点播 ${topArtists[0].count} 次`;
   } else {
-    topArtistVal.textContent = "--";
-    topArtistSub.textContent = "暂无点歌记录";
+    topArtistVal.textContent = '--';
+    topArtistSub.textContent = '暂无点歌记录';
   }
 
   // Populate Artist list (top 5)
   clearChildren(statsArtistsList);
   if (topArtists.length === 0) {
-    statsArtistsList.appendChild(createElement("div", {
-      className: "no-stats-msg",
-      text: "暂无歌手点播数据",
-      style: "color:var(--text-muted); font-size:0.85rem; padding:10px;"
-    }));
+    statsArtistsList.appendChild(
+      createElement('div', {
+        className: 'no-stats-msg',
+        text: '暂无歌手点播数据',
+        style: 'color:var(--text-muted); font-size:0.85rem; padding:10px;'
+      })
+    );
   } else {
-    topArtists.slice(0, 5).forEach(item => {
-      const row = document.createElement("div");
-      row.className = "stats-row-item";
-      row.style.display = "flex";
-      row.style.justifyContent = "space-between";
-      row.style.padding = "8px 12px";
-      row.style.borderBottom = "1px solid var(--border-color)";
-      row.style.fontSize = "0.9rem";
+    topArtists.slice(0, 5).forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'stats-row-item';
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '8px 12px';
+      row.style.borderBottom = '1px solid var(--border-color)';
+      row.style.fontSize = '0.9rem';
 
-      row.appendChild(createElement("span", {
-        className: "stats-rank",
-        text: "🔥"
-      }));
-      row.appendChild(createElement("span", {
-        className: "stats-name",
-        text: item.name,
-        style: "flex:1; margin-left:10px;"
-      }));
-      row.appendChild(createElement("span", {
-        className: "stats-count",
-        text: `${item.count} 次`,
-        style: "font-weight:600; color:var(--color-secondary);"
-      }));
+      row.appendChild(
+        createElement('span', {
+          className: 'stats-rank',
+          text: '🔥'
+        })
+      );
+      row.appendChild(
+        createElement('span', {
+          className: 'stats-name',
+          text: item.name,
+          style: 'flex:1; margin-left:10px;'
+        })
+      );
+      row.appendChild(
+        createElement('span', {
+          className: 'stats-count',
+          text: `${item.count} 次`,
+          style: 'font-weight:600; color:var(--color-secondary);'
+        })
+      );
       statsArtistsList.appendChild(row);
     });
   }
@@ -179,15 +195,13 @@ export function renderStats() {
   }
   state.historyPlaylist.forEach(addSongLikes);
 
-  const topSongs = songLikes
-    .sort((a, b) => b.score - a.score)
-    .filter(s => s.score > 0);
+  const topSongs = songLikes.sort((a, b) => b.score - a.score).filter((s) => s.score > 0);
 
   if (topSongs.length > 0) {
     topSongVal.textContent = topSongs[0].title;
     topSongSub.textContent = `${topSongs[0].singer} - 获赞 ${topSongs[0].score} 次`;
   } else {
-    topSongVal.textContent = "--";
-    topSongSub.textContent = "暂无赠礼点赞";
+    topSongVal.textContent = '--';
+    topSongSub.textContent = '暂无赠礼点赞';
   }
 }

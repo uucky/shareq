@@ -1,4 +1,5 @@
 export const DEFAULT_AVATAR = '🎤';
+export const ALLOWED_REACTION_TYPES = Object.freeze(['rose', 'clap', 'egg', 'shoe']);
 export const DEFAULT_REACTIONS = Object.freeze({
   rose: 0,
   clap: 0,
@@ -7,7 +8,9 @@ export const DEFAULT_REACTIONS = Object.freeze({
 });
 
 export function normalizeRoomId(roomId) {
-  return String(roomId || '').trim().toUpperCase();
+  return String(roomId || '')
+    .trim()
+    .toUpperCase();
 }
 
 export function createRoom(roomId, now = Date.now()) {
@@ -69,10 +72,12 @@ export function createSong({ title, singer, link, requestedBy, requestedByAvatar
 
 export function pushHistory(room) {
   ensureRoomDefaults(room);
-  room.historyStack.push(JSON.stringify({
-    songs: room.songs,
-    alreadySung: room.alreadySung
-  }));
+  room.historyStack.push(
+    JSON.stringify({
+      songs: room.songs,
+      alreadySung: room.alreadySung
+    })
+  );
 
   if (room.historyStack.length > 50) {
     room.historyStack.shift();
@@ -87,10 +92,12 @@ export function undoAction(room) {
     return false;
   }
 
-  room.futureStack.push(JSON.stringify({
-    songs: room.songs,
-    alreadySung: room.alreadySung
-  }));
+  room.futureStack.push(
+    JSON.stringify({
+      songs: room.songs,
+      alreadySung: room.alreadySung
+    })
+  );
 
   const prevState = JSON.parse(room.historyStack.pop());
   room.songs = prevState.songs;
@@ -104,10 +111,12 @@ export function redoAction(room) {
     return false;
   }
 
-  room.historyStack.push(JSON.stringify({
-    songs: room.songs,
-    alreadySung: room.alreadySung
-  }));
+  room.historyStack.push(
+    JSON.stringify({
+      songs: room.songs,
+      alreadySung: room.alreadySung
+    })
+  );
 
   const nextState = JSON.parse(room.futureStack.pop());
   room.songs = nextState.songs;

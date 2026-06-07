@@ -12,11 +12,11 @@ function toCount(value) {
 
 // Modal Toggle for Archive report
 export function openArchiveModal() {
-  document.getElementById("archive-modal").classList.remove("hidden");
+  document.getElementById('archive-modal').classList.remove('hidden');
 }
 
 export function closeArchiveModal() {
-  document.getElementById("archive-modal").classList.add("hidden");
+  document.getElementById('archive-modal').classList.add('hidden');
 }
 
 // EXPORT EGG: Generate high fidelity interactive HTML file with live column sorting
@@ -25,7 +25,7 @@ export function downloadSessionArchive() {
   const exportTimestamp = Date.now();
   const roomIdForHtml = escapeHtml(state.currentRoomId);
   const roomIdForDownload = String(state.currentRoomId || 'ROOM').replace(/[^\w-]/g, '_') || 'ROOM';
-  
+
   // Render completed history
   state.historyPlaylist.forEach((s, idx) => {
     allSongs.push({
@@ -42,7 +42,7 @@ export function downloadSessionArchive() {
       utc: Number(s.completedAt) || 0
     });
   });
-  
+
   // Render current queue
   state.playlist.forEach((s, idx) => {
     allSongs.push({
@@ -62,7 +62,7 @@ export function downloadSessionArchive() {
 
   // Calculate Top Singers (by completed history songs)
   const singerCounts = {};
-  state.historyPlaylist.forEach(s => {
+  state.historyPlaylist.forEach((s) => {
     const name = s.requestedBy;
     singerCounts[name] = (singerCounts[name] || 0) + 1;
   });
@@ -71,13 +71,13 @@ export function downloadSessionArchive() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  let topSingersHtml = "";
+  let topSingersHtml = '';
   if (topSingers.length === 0) {
     topSingersHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无已唱歌曲</li>";
   } else {
-    const medals = ["🥇", "🥈", "🥉", "🔹", "🔹"];
+    const medals = ['🥇', '🥈', '🥉', '🔹', '🔹'];
     topSingers.forEach((item, idx) => {
-      topSingersHtml += `<li style='margin-bottom: 6px;'>${medals[idx] || "🔹"} <strong>${escapeHtml(item.name)}</strong> - 演唱了 ${item.count} 首</li>`;
+      topSingersHtml += `<li style='margin-bottom: 6px;'>${medals[idx] || '🔹'} <strong>${escapeHtml(item.name)}</strong> - 演唱了 ${item.count} 首</li>`;
     });
   }
 
@@ -97,11 +97,11 @@ export function downloadSessionArchive() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  let topArtistsHtml = "";
+  let topArtistsHtml = '';
   if (topArtists.length === 0) {
     topArtistsHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无歌手点播数据</li>";
   } else {
-    topArtists.forEach(item => {
+    topArtists.forEach((item) => {
       topArtistsHtml += `<li style='margin-bottom: 6px;'>🔥 <strong>${escapeHtml(item.name)}</strong> - 被点播 ${item.count} 次</li>`;
     });
   }
@@ -121,17 +121,17 @@ export function downloadSessionArchive() {
     addSongLikes(state.playlist[0]);
   }
   state.historyPlaylist.forEach(addSongLikes);
-  
+
   const topSongs = songLikes
     .sort((a, b) => b.score - a.score)
-    .filter(s => s.score > 0)
+    .filter((s) => s.score > 0)
     .slice(0, 5);
 
-  let topSongsHtml = "";
+  let topSongsHtml = '';
   if (topSongs.length === 0) {
     topSongsHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无点赞互动金曲</li>";
   } else {
-    topSongs.forEach(item => {
+    topSongs.forEach((item) => {
       topSongsHtml += `<li style='margin-bottom: 6px;'>👍 <strong>${escapeHtml(item.title)}</strong> (${escapeHtml(item.singer)}) - 获赞 ${item.score} 次</li>`;
     });
   }
@@ -324,17 +324,21 @@ export function downloadSessionArchive() {
       <tbody>
   `;
 
-  allSongs.forEach(s => {
-    const badgeClass = s.status.includes('已唱') ? 'badge-sung' : (s.status.includes('正在') ? 'badge-singing' : 'badge-queued');
+  allSongs.forEach((s) => {
+    const badgeClass = s.status.includes('已唱')
+      ? 'badge-sung'
+      : s.status.includes('正在')
+        ? 'badge-singing'
+        : 'badge-queued';
     const safeLink = getSafeHttpUrl(s.link);
     const linkTag = safeLink
       ? `<a class="link-btn" href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">🔗 打开伴奏</a>`
       : '<span style="color: #676c8c;">-</span>';
     const utc = Number(s.utc) || 0;
-    
-    let initialTimeStr = "待唱";
+
+    let initialTimeStr = '待唱';
     if (utc === -1) {
-      initialTimeStr = "正在唱";
+      initialTimeStr = '正在唱';
     } else if (utc > 0) {
       initialTimeStr = new Date(utc).toISOString();
     }
@@ -519,9 +523,9 @@ export function downloadSessionArchive() {
   // Download logic trigger
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `ShareQ_KTV_${roomIdForDownload}_Session_Archive.html`);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `ShareQ_KTV_${roomIdForDownload}_Session_Archive.html`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();

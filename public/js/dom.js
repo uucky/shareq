@@ -52,7 +52,7 @@ export function createElement(tagName, options = {}, children = []) {
     });
   }
 
-  children.forEach(child => {
+  children.forEach((child) => {
     if (child === undefined || child === null) {
       return;
     }
@@ -69,7 +69,7 @@ export function createElement(tagName, options = {}, children = []) {
 }
 
 export function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, char => {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => {
     const entities = {
       '&': '&amp;',
       '<': '&lt;',

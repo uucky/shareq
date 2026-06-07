@@ -28,14 +28,12 @@ function collectMatches(text, regex) {
 
 const html = fs.readFileSync(indexHtmlPath, 'utf8');
 const jsFiles = listJsFiles(publicDir);
-const jsSources = jsFiles.map(file => ({
+const jsSources = jsFiles.map((file) => ({
   file,
   text: fs.readFileSync(file, 'utf8')
 }));
 
-const declaredIds = new Set([
-  ...collectMatches(html, /\bid\s*=\s*["']([^"']+)["']/g)
-]);
+const declaredIds = new Set([...collectMatches(html, /\bid\s*=\s*["']([^"']+)["']/g)]);
 
 for (const { text } of jsSources) {
   for (const id of collectMatches(text, /\bid\s*=\s*["']([^"']+)["']/g)) {
