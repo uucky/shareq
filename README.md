@@ -95,10 +95,20 @@ node server.js
 ShareQ 是纯 Node.js 应用，可部署到任何支持 Node.js 的平台：
 
 - **本地局域网**: 直接运行，同网段设备通过 `http://<你的IP>:3000` 访问
-- **Docker**: 编写简单的 Dockerfile 即可容器化部署
+- **Docker**: 使用 `docker compose up -d --build` 启动，房间数据会持久化到宿主机 `./data`
 - **云服务**: Railway / Render / Fly.io / VPS 均可
 
 端口通过环境变量 `PORT` 自定义，默认 `3000`。
+
+### Docker Compose 部署
+
+```bash
+docker compose up -d --build
+```
+
+服务启动后访问 **http://localhost:3000**。
+
+房间数据保存在宿主机项目目录的 `data/rooms.json`。升级或重启容器时不要删除 `data/` 目录。
 
 ---
 
