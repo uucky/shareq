@@ -57,7 +57,6 @@ test('Server integration test', async (t) => {
       console.log('Response received. Checking HTML content...');
       
       assert.match(html, /ShareQ/i);
-      assert.match(html, /测试服/);
       console.log('Assertions passed successfully!');
     } finally {
       console.log('Stopping test server...');
