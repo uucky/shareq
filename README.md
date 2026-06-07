@@ -6,14 +6,6 @@
   <img src="https://img.shields.io/badge/Node.js-24+-339933?logo=nodedotjs&logoColor=white" alt="Node.js">
   <img src="https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white" alt="Express">
   <img src="https://img.shields.io/badge/Socket.IO-4.x-010101?logo=socketdotio&logoColor=white" alt="Socket.IO">
-  <img src="https://img.shields.io/badge/license-ISC-blue" alt="License">
-  <img src="https://img.shields.io/badge/version-v1.3.0-ff2a85" alt="Version">
-</p>
-
-<p align="center">
-  <a href="https://render.com/deploy?repo=https://github.com/uucky/shareq">
-    <img src="https://render.com/images/deploy-to-render.svg" alt="Deploy to Render">
-  </a>
 </p>
 
 ---
@@ -68,72 +60,18 @@
 
 ---
 
-## 🚀 快速开始
-
-### 环境要求
-
-- [Node.js](https://nodejs.org/) >= 18
-
-### 安装与运行
-
-```bash
-# 克隆仓库
-git clone https://github.com/uucky/shareq.git
-cd shareq
-
-# 安装依赖
-npm install
-
-# 启动服务器
-node server.js
-```
-
-服务启动后访问 **http://localhost:3000** 即可使用。
-
 ### 部署
 
-ShareQ 是纯 Node.js 应用，可部署到任何支持 Node.js 的平台：
-
-- **本地局域网**: 直接运行，同网段设备通过 `http://<你的IP>:3000` 访问
-- **Docker**: 编写简单的 Dockerfile 即可容器化部署
-- **云服务**: Railway / Render / Fly.io / VPS 均可
-
-端口通过环境变量 `PORT` 自定义，默认 `3000`。
+见 `./docker-compose.example.yml`。
 
 ---
 
 ## 🏗️ 技术架构
 
-```
-shareq/
-├── server.js          # Express + Socket.IO 服务端
-├── public/
-│   ├── index.html     # 单页应用 HTML 结构
-│   ├── app.js         # 客户端逻辑 (WebSocket, DOM, Web Audio)
-│   └── style.css      # 全局样式 (CSS 变量, 亮/暗主题)
-├── data/              # 房间数据持久化存储
-├── changelog.md       # 更新日志
-└── package.json
-```
-
 - **实时同步**: Socket.IO 双向通信，歌单/成员/互动全房间实时同步
 - **数据持久化**: 房间数据以 JSON 形式存储在 `data/` 目录，服务重启后自动恢复
 - **零依赖前端**: 纯 HTML + CSS + Vanilla JS，无需构建工具
 - **音效合成**: Web Audio API 实时合成互动音效，无需加载音频文件
-
----
-
-## 📝 更新日志
-
-详见 [changelog.md](./changelog.md)
-
-**当前版本: v1.3.0** — 自定义头像上传、轮唱提醒、自主切/删歌、关于弹窗
-
----
-
-## 📄 License
-
-[ISC](./LICENSE)
 
 ---
 
