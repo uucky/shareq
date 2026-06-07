@@ -4,15 +4,18 @@
   "description": "共享卡拉OK歌单系统，专为多人 KTV 聚会设计的实时点歌 Web 应用",
   "main": "server.js",
   "scripts": {
+    "build": "vite build",
     "check:ids": "node scripts/check-dom-ids.js",
+    "dev": "vite --host 0.0.0.0",
     "format": "prettier --write \"**/*.{html,css,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{html,css,js,json,md,yml,yaml}\"",
-    "lint": "eslint --max-warnings=0 server.js scripts src test public/app.js public/js",
+    "lint": "eslint --max-warnings=0 server.js vite.config.js scripts src test client",
     "migrate:sqlite": "node scripts/migrate-json-to-sqlite.js",
     "start": "node server.js",
-    "test": "node --test test/*.test.js",
-    "test:e2e": "playwright test",
-    "verify": "npm run lint && npm run check:ids && npm test && npm run test:e2e"
+    "test": "npm run build && npm run test:node",
+    "test:e2e": "npm run build && playwright test",
+    "test:node": "node --test test/*.test.js",
+    "verify": "npm run lint && npm run check:ids && npm run build && npm run test:node && playwright test"
   },
   "keywords": [
     "karaoke",
@@ -37,6 +40,7 @@
     "@playwright/test": "^1.60.0",
     "eslint": "^10.4.1",
     "prettier": "^3.8.3",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "vite": "^8.0.16"
   }
 }

@@ -71,8 +71,36 @@
 
 - **实时同步**: Socket.IO 双向通信，歌单/成员/互动全房间实时同步
 - **数据持久化**: 房间数据以 SQLite 形式存储在 `data/shareq.sqlite`，服务重启后自动恢复
-- **零依赖前端**: 纯 HTML + CSS + Vanilla JS，无需构建工具
+- **前端构建**: Vite + Vanilla JS，生产环境输出带哈希的静态资源
 - **音效合成**: Web Audio API 实时合成互动音效，无需加载音频文件
+
+## 🚀 本地开发
+
+安装依赖：
+
+```bash
+npm install
+```
+
+开发时分别启动后端和 Vite 前端：
+
+```bash
+npm start
+npm run dev
+```
+
+生产运行前先构建前端：
+
+```bash
+npm run build
+npm start
+```
+
+完整检查：
+
+```bash
+npm run verify
+```
 
 ---
 

@@ -84,6 +84,16 @@ p {
   line-height: 1.6;
 }
 
+.version-commit-link {
+  color: var(--color-success);
+  text-decoration: none;
+}
+
+.version-commit-link:hover,
+.version-commit-link:focus-visible {
+  text-decoration: underline;
+}
+
 /* App Container */
 .app-container {
   width: 100%;

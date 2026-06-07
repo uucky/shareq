@@ -27,13 +27,19 @@ const browserGlobals = {
   window: 'readonly'
 };
 
+const buildGlobals = {
+  __APP_COMMIT__: 'readonly',
+  __APP_COMMIT_FULL__: 'readonly',
+  __APP_VERSION__: 'readonly'
+};
+
 export default [
   {
-    ignores: ['data/**', 'node_modules/**']
+    ignores: ['data/**', 'dist/**', 'node_modules/**']
   },
   js.configs.recommended,
   {
-    files: ['server.js', 'scripts/**/*.js', 'src/**/*.js', 'test/**/*.js'],
+    files: ['server.js', 'vite.config.js', 'scripts/**/*.js', 'src/**/*.js', 'test/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -53,11 +59,14 @@ export default [
     }
   },
   {
-    files: ['public/app.js', 'public/js/**/*.js'],
+    files: ['client/app.js', 'client/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: browserGlobals
+      globals: {
+        ...browserGlobals,
+        ...buildGlobals
+      }
     },
     rules: {
       'no-console': 'off',
