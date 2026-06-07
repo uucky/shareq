@@ -7,6 +7,7 @@
 - **3-Column Nesting Layout Fix**: Corrected missing closing tags (`</div>` and `</section>`) for the playlist container card in `public/index.html`. This correctly snaps the Activity section to the independent third column on the right side rather than overlapping or stacking below the playlist queue.
 - **Button Word-Wrapping Prevention**: Added `white-space: nowrap` rules to `.playlist-tab-btn`, `.btn-action`, and `.toast-filter-btn` to prevent critical terms like "待播歌单" from wrapping characters on narrower viewport widths.
 - **Next Button Label Simplification**: Renamed the moderator control button label from "切歌 / 下一首" to "切歌".
+- **Package.json Main Script Correction**: Updated `"main"` entry point from `index.js` to `server.js` in `package.json` to prevent Render from incorrectly searching for a missing `index.js` module during startup.
 
 ## [2026-06-06 22:30:00]
 ### Refactored & Optimized on Dev
