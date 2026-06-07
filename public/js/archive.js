@@ -1,4 +1,14 @@
+import { escapeHtml, getSafeHttpUrl } from './dom.js';
 import { state } from './state.js';
+
+function toCount(value) {
+  const count = Number(value);
+  if (!Number.isFinite(count) || count < 0) {
+    return 0;
+  }
+
+  return Math.floor(count);
+}
 
 // Modal Toggle for Archive report
 export function openArchiveModal() {
@@ -13,6 +23,8 @@ export function closeArchiveModal() {
 export function downloadSessionArchive() {
   const allSongs = [];
   const exportTimestamp = Date.now();
+  const roomIdForHtml = escapeHtml(state.currentRoomId);
+  const roomIdForDownload = String(state.currentRoomId || 'ROOM').replace(/[^\w-]/g, '_') || 'ROOM';
   
   // Render completed history
   state.historyPlaylist.forEach((s, idx) => {
@@ -23,11 +35,11 @@ export function downloadSessionArchive() {
       singer: s.singer || '无',
       link: s.link || '',
       requestedBy: s.requestedBy,
-      rose: s.reactions?.rose || 0,
-      clap: s.reactions?.clap || 0,
-      egg: s.reactions?.egg || 0,
-      shoe: s.reactions?.shoe || 0,
-      utc: s.completedAt || 0
+      rose: toCount(s.reactions?.rose),
+      clap: toCount(s.reactions?.clap),
+      egg: toCount(s.reactions?.egg),
+      shoe: toCount(s.reactions?.shoe),
+      utc: Number(s.completedAt) || 0
     });
   });
   
@@ -40,10 +52,10 @@ export function downloadSessionArchive() {
       singer: s.singer || '无',
       link: s.link || '',
       requestedBy: s.requestedBy,
-      rose: s.reactions?.rose || 0,
-      clap: s.reactions?.clap || 0,
-      egg: s.reactions?.egg || 0,
-      shoe: s.reactions?.shoe || 0,
+      rose: toCount(s.reactions?.rose),
+      clap: toCount(s.reactions?.clap),
+      egg: toCount(s.reactions?.egg),
+      shoe: toCount(s.reactions?.shoe),
       utc: idx === 0 ? -1 : 0 // -1 represents Now Playing, 0 represents Queued
     });
   });
@@ -65,7 +77,7 @@ export function downloadSessionArchive() {
   } else {
     const medals = ["🥇", "🥈", "🥉", "🔹", "🔹"];
     topSingers.forEach((item, idx) => {
-      topSingersHtml += `<li style='margin-bottom: 6px;'>${medals[idx] || "🔹"} <strong>${item.name}</strong> - 演唱了 ${item.count} 首</li>`;
+      topSingersHtml += `<li style='margin-bottom: 6px;'>${medals[idx] || "🔹"} <strong>${escapeHtml(item.name)}</strong> - 演唱了 ${item.count} 首</li>`;
     });
   }
 
@@ -89,8 +101,8 @@ export function downloadSessionArchive() {
   if (topArtists.length === 0) {
     topArtistsHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无歌手点播数据</li>";
   } else {
-    topArtists.forEach((item, idx) => {
-      topArtistsHtml += `<li style='margin-bottom: 6px;'>🔥 <strong>${item.name}</strong> - 被点播 ${item.count} 次</li>`;
+    topArtists.forEach(item => {
+      topArtistsHtml += `<li style='margin-bottom: 6px;'>🔥 <strong>${escapeHtml(item.name)}</strong> - 被点播 ${item.count} 次</li>`;
     });
   }
 
@@ -98,7 +110,7 @@ export function downloadSessionArchive() {
   const songLikes = [];
   const addSongLikes = (s) => {
     const reacts = s.reactions || { rose: 0, clap: 0, egg: 0, shoe: 0 };
-    const score = (reacts.rose || 0) + (reacts.clap || 0);
+    const score = toCount(reacts.rose) + toCount(reacts.clap);
     songLikes.push({
       title: s.title,
       singer: s.singer || '未知',
@@ -119,8 +131,8 @@ export function downloadSessionArchive() {
   if (topSongs.length === 0) {
     topSongsHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无点赞互动金曲</li>";
   } else {
-    topSongs.forEach((item, idx) => {
-      topSongsHtml += `<li style='margin-bottom: 6px;'>👍 <strong>${item.title}</strong> (${item.singer}) - 获赞 ${item.score} 次</li>`;
+    topSongs.forEach(item => {
+      topSongsHtml += `<li style='margin-bottom: 6px;'>👍 <strong>${escapeHtml(item.title)}</strong> (${escapeHtml(item.singer)}) - 获赞 ${item.score} 次</li>`;
     });
   }
 
@@ -254,7 +266,7 @@ export function downloadSessionArchive() {
   <div class="container">
     <h1>🎤 ShareQ KTV 歌单记录报告</h1>
     <div class="subtitle">
-      存档时间：<span id="exportTime" data-utc="${exportTimestamp}">${new Date(exportTimestamp).toISOString()}</span> | 房间号：${state.currentRoomId}
+      存档时间：<span id="exportTime" data-utc="${exportTimestamp}">${new Date(exportTimestamp).toISOString()}</span> | 房间号：${roomIdForHtml}
     </div>
 
     <!-- 动态数据统计看板 -->
@@ -314,25 +326,29 @@ export function downloadSessionArchive() {
 
   allSongs.forEach(s => {
     const badgeClass = s.status.includes('已唱') ? 'badge-sung' : (s.status.includes('正在') ? 'badge-singing' : 'badge-queued');
-    const linkTag = s.link ? `<a class="link-btn" href="${s.link}" target="_blank">🔗 打开伴奏</a>` : '<span style="color: #676c8c;">-</span>';
+    const safeLink = getSafeHttpUrl(s.link);
+    const linkTag = safeLink
+      ? `<a class="link-btn" href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">🔗 打开伴奏</a>`
+      : '<span style="color: #676c8c;">-</span>';
+    const utc = Number(s.utc) || 0;
     
     let initialTimeStr = "待唱";
-    if (s.utc === -1) {
+    if (utc === -1) {
       initialTimeStr = "正在唱";
-    } else if (s.utc > 0) {
-      initialTimeStr = new Date(s.utc).toISOString();
+    } else if (utc > 0) {
+      initialTimeStr = new Date(utc).toISOString();
     }
 
     html += `
         <tr>
           <td style="font-weight: bold; font-family: monospace;">${s.order}</td>
-          <td><span class="badge ${badgeClass}">${s.status}</span></td>
-          <td style="font-weight: bold; color: white;">${s.title}</td>
-          <td>${s.singer}</td>
-          <td>${s.requestedBy}</td>
+          <td><span class="badge ${badgeClass}">${escapeHtml(s.status)}</span></td>
+          <td style="font-weight: bold; color: white;">${escapeHtml(s.title)}</td>
+          <td>${escapeHtml(s.singer)}</td>
+          <td>${escapeHtml(s.requestedBy)}</td>
           <td>${linkTag}</td>
           <td style="font-family: monospace;">🌹 ${s.rose} | 👏 ${s.clap} | 🥚 ${s.egg} | 👞 ${s.shoe}</td>
-          <td class="time-cell" data-utc="${s.utc}">${initialTimeStr}</td>
+          <td class="time-cell" data-utc="${utc}">${escapeHtml(initialTimeStr)}</td>
         </tr>
     `;
   });
@@ -505,7 +521,7 @@ export function downloadSessionArchive() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", `ShareQ_KTV_${state.currentRoomId}_Session_Archive.html`);
+  link.setAttribute("download", `ShareQ_KTV_${roomIdForDownload}_Session_Archive.html`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();

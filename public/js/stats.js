@@ -1,3 +1,4 @@
+import { clearChildren, createElement } from './dom.js';
 import { state } from './state.js';
 
 // Compute KTV Session statistics
@@ -66,9 +67,13 @@ export function renderStats() {
   }
 
   // Populate Singer list (top 5)
-  statsSingersList.innerHTML = "";
+  clearChildren(statsSingersList);
   if (topSingers.length === 0) {
-    statsSingersList.innerHTML = `<div class="no-stats-msg" style="color:var(--text-muted); font-size:0.85rem; padding:10px;">暂无歌手数据</div>`;
+    statsSingersList.appendChild(createElement("div", {
+      className: "no-stats-msg",
+      text: "暂无歌手数据",
+      style: "color:var(--text-muted); font-size:0.85rem; padding:10px;"
+    }));
   } else {
     topSingers.slice(0, 5).forEach((item, idx) => {
       const row = document.createElement("div");
@@ -80,11 +85,20 @@ export function renderStats() {
       row.style.fontSize = "0.9rem";
       
       const medals = ["🥇", "🥈", "🥉", "🔹", "🔹"];
-      row.innerHTML = `
-        <span class="stats-rank">${medals[idx] || "🔹"}</span>
-        <span class="stats-name" style="flex:1; margin-left:10px;">${item.name}</span>
-        <span class="stats-count" style="font-weight:600; color:var(--color-primary);">${item.count} 首</span>
-      `;
+      row.appendChild(createElement("span", {
+        className: "stats-rank",
+        text: medals[idx] || "🔹"
+      }));
+      row.appendChild(createElement("span", {
+        className: "stats-name",
+        text: item.name,
+        style: "flex:1; margin-left:10px;"
+      }));
+      row.appendChild(createElement("span", {
+        className: "stats-count",
+        text: `${item.count} 首`,
+        style: "font-weight:600; color:var(--color-primary);"
+      }));
       statsSingersList.appendChild(row);
     });
   }
@@ -114,11 +128,15 @@ export function renderStats() {
   }
 
   // Populate Artist list (top 5)
-  statsArtistsList.innerHTML = "";
+  clearChildren(statsArtistsList);
   if (topArtists.length === 0) {
-    statsArtistsList.innerHTML = `<div class="no-stats-msg" style="color:var(--text-muted); font-size:0.85rem; padding:10px;">暂无歌手点播数据</div>`;
+    statsArtistsList.appendChild(createElement("div", {
+      className: "no-stats-msg",
+      text: "暂无歌手点播数据",
+      style: "color:var(--text-muted); font-size:0.85rem; padding:10px;"
+    }));
   } else {
-    topArtists.slice(0, 5).forEach((item, idx) => {
+    topArtists.slice(0, 5).forEach(item => {
       const row = document.createElement("div");
       row.className = "stats-row-item";
       row.style.display = "flex";
@@ -127,11 +145,20 @@ export function renderStats() {
       row.style.borderBottom = "1px solid var(--border-color)";
       row.style.fontSize = "0.9rem";
 
-      row.innerHTML = `
-        <span class="stats-rank">🔥</span>
-        <span class="stats-name" style="flex:1; margin-left:10px;">${item.name}</span>
-        <span class="stats-count" style="font-weight:600; color:var(--color-secondary);">${item.count} 次</span>
-      `;
+      row.appendChild(createElement("span", {
+        className: "stats-rank",
+        text: "🔥"
+      }));
+      row.appendChild(createElement("span", {
+        className: "stats-name",
+        text: item.name,
+        style: "flex:1; margin-left:10px;"
+      }));
+      row.appendChild(createElement("span", {
+        className: "stats-count",
+        text: `${item.count} 次`,
+        style: "font-weight:600; color:var(--color-secondary);"
+      }));
       statsArtistsList.appendChild(row);
     });
   }

@@ -1,40 +1,66 @@
+import { appendText, clearChildren, createElement } from './dom.js';
 import { state } from './state.js';
+
+function getToastIcon(type) {
+  if (type === 'add') return 'fa-circle-plus';
+  if (type === 'pin') return 'fa-angles-up';
+  if (type === 'delete') return 'fa-trash-can';
+  if (type === 'shuffle') return 'fa-shuffle';
+  if (type === 'next') return 'fa-forward-step';
+  if (type === 'dedicate') return 'fa-gift';
+  return 'fa-circle-info';
+}
+
+function getToastClassType(type) {
+  if (['add', 'pin', 'delete', 'shuffle', 'next', 'dedicate'].includes(type)) {
+    return type;
+  }
+
+  return 'system';
+}
+
+function createIcon(iconClass) {
+  return createElement('i', { className: `fa-solid ${iconClass}` });
+}
 
 // System toasts popups
 export function showToast(type, text) {
-  // Save to toast history
-  state.toastHistory.push({ type, text, time: Date.now() });
+  const toastType = String(type || 'info');
 
-  if (type === 'dedicate') {
+  // Save to toast history
+  state.toastHistory.push({ type: toastType, text, time: Date.now() });
+
+  if (toastType === 'dedicate') {
     state.unreadToastsCount++;
   }
   updateToastHistoryUI();
 
   // Only show floating toast popups for direct 'dedicate' notifications
-  if (type !== 'dedicate') return;
+  if (toastType !== 'dedicate') return;
 
   const container = document.getElementById("notification-center");
   if (!container) return;
 
   const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
-  
-  let icon = "fa-circle-info";
-  if (type === 'add') icon = "fa-circle-plus";
-  else if (type === 'pin') icon = "fa-angles-up";
-  else if (type === 'delete') icon = "fa-trash-can";
-  else if (type === 'shuffle') icon = "fa-shuffle";
-  else if (type === 'next') icon = "fa-forward-step";
-  else if (type === 'dedicate') icon = "fa-gift";
+  toast.className = `toast toast-${getToastClassType(toastType)}`;
 
-  toast.innerHTML = `
-    <span class="toast-icon"><i class="fa-solid ${icon}"></i></span>
-    <span class="toast-text">${text}</span>
-    <button type="button" class="toast-close">&times;</button>
-  `;
+  const closeBtn = createElement("button", {
+    type: "button",
+    className: "toast-close",
+    text: "×"
+  });
+
+  toast.appendChild(createElement("span", { className: "toast-icon" }, [
+    createIcon(getToastIcon(toastType))
+  ]));
+  toast.appendChild(createElement("span", {
+    className: "toast-text",
+    text
+  }));
+  toast.appendChild(closeBtn);
 
   // Bind close click
-  toast.querySelector(".toast-close").addEventListener("click", () => {
+  closeBtn.addEventListener("click", () => {
     toast.remove();
   });
 
@@ -76,7 +102,7 @@ export function updateToastHistoryUI() {
   const activeBtn = document.querySelector(".toast-filter-link.active");
   const filter = activeBtn ? activeBtn.dataset.filter : "all";
 
-  list.innerHTML = "";
+  clearChildren(list);
   
   // Filter history items
   const filteredHistory = state.toastHistory.filter(item => {
@@ -92,7 +118,10 @@ export function updateToastHistoryUI() {
   });
 
   if (filteredHistory.length === 0) {
-    list.innerHTML = `<div class="no-history-msg">暂无此类型的历史消息</div>`;
+    list.appendChild(createElement("div", {
+      className: "no-history-msg",
+      text: "暂无此类型的历史消息"
+    }));
     return;
   }
 
@@ -101,24 +130,28 @@ export function updateToastHistoryUI() {
 
   for (let i = 0; i < displayedHistory.length; i++) {
     const item = displayedHistory[i];
+    const classType = getToastClassType(item.type);
     const el = document.createElement("div");
-    el.className = `history-toast-item toast-${item.type}`;
-    
-    let icon = "fa-circle-info";
-    if (item.type === 'add') icon = "fa-circle-plus";
-    else if (item.type === 'pin') icon = "fa-angles-up";
-    else if (item.type === 'delete') icon = "fa-trash-can";
-    else if (item.type === 'shuffle') icon = "fa-shuffle";
-    else if (item.type === 'next') icon = "fa-forward-step";
-    else if (item.type === 'dedicate') icon = "fa-gift";
+    el.className = `history-toast-item toast-${classType}`;
 
     const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
-    el.innerHTML = `
-      <span class="chat-badge toast-badge-${item.type}" style="font-size:0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold; flex-shrink: 0;"><i class="fa-solid ${icon}"></i></span>
-      <span class="chat-text" style="font-size:0.85rem; line-height: 1.4; word-break: break-all; flex-grow: 1;">${item.text}</span>
-      <span class="chat-time" style="font-size:0.7rem; opacity:0.4; margin-left: 6px; flex-shrink: 0; align-self: flex-start; margin-top: 2px;">${timeStr}</span>
-    `;
+    el.appendChild(createElement("span", {
+      className: `chat-badge toast-badge-${classType}`,
+      style: "font-size:0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold; flex-shrink: 0;"
+    }, [
+      createIcon(getToastIcon(item.type))
+    ]));
+    el.appendChild(createElement("span", {
+      className: "chat-text",
+      text: item.text,
+      style: "font-size:0.85rem; line-height: 1.4; word-break: break-all; flex-grow: 1;"
+    }));
+    el.appendChild(createElement("span", {
+      className: "chat-time",
+      text: timeStr,
+      style: "font-size:0.7rem; opacity:0.4; margin-left: 6px; flex-shrink: 0; align-self: flex-start; margin-top: 2px;"
+    }));
     list.appendChild(el);
   }
 }
@@ -153,19 +186,44 @@ export function showDedicationRequestModal(data) {
   const card = document.createElement("div");
   card.className = "pending-dedication-card animate-glow";
   card.style = "background: var(--card-bg); border-radius: 8px; padding: 12px; border-left: 4px solid var(--color-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 8px;";
-  card.innerHTML = `
-    <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">
-      <i class="fa-solid fa-gift" style="color: var(--color-primary);"></i> ${data.fromUsername} 
-      <span style="font-weight: normal; font-size: 0.85rem; color: var(--text-secondary);">为你指名</span>
-    </div>
-    <div style="font-size: 0.9rem; margin-bottom: 12px;">
-      《${data.title}》- ${data.singer || '未知'}
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <button type="button" class="btn btn-primary accept-dedication-btn" style="flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px;">接受</button>
-      <button type="button" class="btn decline-dedication-btn" style="flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">拒绝</button>
-    </div>
-  `;
+
+  const titleRow = createElement("div", {
+    style: "font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;"
+  }, [
+    createElement("i", {
+      className: "fa-solid fa-gift",
+      style: "color: var(--color-primary);"
+    })
+  ]);
+  appendText(titleRow, ` ${data.fromUsername || ""} `);
+  titleRow.appendChild(createElement("span", {
+    text: "为你指名",
+    style: "font-weight: normal; font-size: 0.85rem; color: var(--text-secondary);"
+  }));
+
+  const actions = createElement("div", {
+    style: "display: flex; gap: 8px;"
+  }, [
+    createElement("button", {
+      type: "button",
+      className: "btn btn-primary accept-dedication-btn",
+      text: "接受",
+      style: "flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px;"
+    }),
+    createElement("button", {
+      type: "button",
+      className: "btn decline-dedication-btn",
+      text: "拒绝",
+      style: "flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;"
+    })
+  ]);
+
+  card.appendChild(titleRow);
+  card.appendChild(createElement("div", {
+    text: `《${data.title}》- ${data.singer || '未知'}`,
+    style: "font-size: 0.9rem; margin-bottom: 12px;"
+  }));
+  card.appendChild(actions);
   list.appendChild(card);
   updateMessagesEmptyState();
 

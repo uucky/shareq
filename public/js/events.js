@@ -1,4 +1,4 @@
-import { renderAvatarHTML, resizeAndSetAvatar, updateAvatarPreview } from './avatar.js';
+import { resizeAndSetAvatar, setAvatarElement, updateAvatarPreview } from './avatar.js';
 import { emojis, randomNames } from './data.js';
 import { state } from './state.js';
 
@@ -97,7 +97,7 @@ export function setupEventListeners(deps) {
       if (file) {
         resizeAndSetAvatar(file, (dataUrl) => {
           const preview = document.getElementById("modal-avatar-preview");
-          preview.innerHTML = renderAvatarHTML(dataUrl);
+          setAvatarElement(preview, dataUrl);
           preview.dataset.selectedEmoji = dataUrl;
         });
       }
@@ -155,7 +155,7 @@ export function setupEventListeners(deps) {
   widget.addEventListener("click", () => {
     document.getElementById("modal-username").value = state.currentUsername;
     const preview = document.getElementById("modal-avatar-preview");
-    preview.innerHTML = renderAvatarHTML(state.currentAvatar);
+    setAvatarElement(preview, state.currentAvatar);
     preview.dataset.selectedEmoji = state.currentAvatar;
     
     // Select the correct one in modal grid
@@ -206,7 +206,7 @@ export function setupEventListeners(deps) {
     const idx = Math.floor(Math.random() * emojis.length);
     const preview = document.getElementById("modal-avatar-preview");
     const targetEmoji = emojis[idx];
-    preview.innerHTML = renderAvatarHTML(targetEmoji);
+    setAvatarElement(preview, targetEmoji);
     preview.dataset.selectedEmoji = targetEmoji;
     
     // Highlight

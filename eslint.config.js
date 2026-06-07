@@ -11,12 +11,27 @@ const nodeGlobals = {
   URL: 'readonly'
 };
 
+const browserGlobals = {
+  alert: 'readonly',
+  Blob: 'readonly',
+  confirm: 'readonly',
+  console: 'readonly',
+  document: 'readonly',
+  FileReader: 'readonly',
+  Image: 'readonly',
+  localStorage: 'readonly',
+  navigator: 'readonly',
+  setTimeout: 'readonly',
+  URL: 'readonly',
+  URLSearchParams: 'readonly',
+  window: 'readonly'
+};
+
 export default [
   {
     ignores: [
       'data/**',
-      'node_modules/**',
-      'public/**'
+      'node_modules/**'
     ]
   },
   js.configs.recommended,
@@ -40,6 +55,25 @@ export default [
         varsIgnorePattern: '^_'
       }],
       quotes: ['error', 'single', { avoidEscape: true }],
+      semi: ['error', 'always']
+    }
+  },
+  {
+    files: [
+      'public/app.js',
+      'public/js/**/*.js'
+    ],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: browserGlobals
+    },
+    rules: {
+      'no-console': 'off',
+      'no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
+      }],
       semi: ['error', 'always']
     }
   }

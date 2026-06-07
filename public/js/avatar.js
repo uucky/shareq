@@ -1,9 +1,58 @@
-export function renderAvatarHTML(avatarData, className = '') {
-  const av = avatarData || '🎤';
-  if (av.startsWith('data:image/') || av.startsWith('http://') || av.startsWith('https://')) {
-    return `<img src="${av}" class="${className}" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;" onerror="this.onerror=null; this.outerHTML='🎤';">`;
+import { clearChildren, createElement, escapeHtml, getSafeHttpUrl } from './dom.js';
+
+function getSafeAvatarImageSrc(avatarData) {
+  const av = String(avatarData || '');
+  if (
+    av.startsWith('data:image/png') ||
+    av.startsWith('data:image/jpeg') ||
+    av.startsWith('data:image/gif') ||
+    av.startsWith('data:image/webp')
+  ) {
+    return av;
   }
-  return `<span class="${className}" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:inherit;">${av}</span>`;
+
+  return getSafeHttpUrl(av);
+}
+
+export function createAvatarElement(avatarData, className = '') {
+  const av = String(avatarData || '🎤');
+  const imageSrc = getSafeAvatarImageSrc(av);
+
+  if (imageSrc) {
+    const img = createElement('img', {
+      className,
+      attributes: { src: imageSrc },
+      style: 'width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;'
+    });
+    img.addEventListener('error', () => {
+      const fallback = createAvatarElement('🎤', className);
+      img.replaceWith(fallback);
+    }, { once: true });
+    return img;
+  }
+
+  return createElement('span', {
+    className,
+    text: av,
+    style: 'display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:inherit;'
+  });
+}
+
+export function setAvatarElement(container, avatar, className = '') {
+  clearChildren(container);
+  container.appendChild(createAvatarElement(avatar, className));
+}
+
+export function renderAvatarHTML(avatarData, className = '') {
+  const av = String(avatarData || '🎤');
+  const imageSrc = getSafeAvatarImageSrc(av);
+  const safeClassName = escapeHtml(className);
+
+  if (imageSrc) {
+    return `<img src="${escapeHtml(imageSrc)}" class="${safeClassName}" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;" onerror="this.onerror=null; this.outerHTML='🎤';">`;
+  }
+
+  return `<span class="${safeClassName}" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:inherit;">${escapeHtml(av)}</span>`;
 }
 
 export function resizeAndSetAvatar(file, callback) {
@@ -41,7 +90,7 @@ export function renderEmojiGrid(containerId, emojis, onSelectCallback, selectedE
     return;
   }
 
-  grid.innerHTML = '';
+  clearChildren(grid);
 
   emojis.forEach(emoji => {
     const cell = document.createElement('button');
@@ -62,5 +111,5 @@ export function renderEmojiGrid(containerId, emojis, onSelectCallback, selectedE
 }
 
 export function updateAvatarPreview(elemId, avatar) {
-  document.getElementById(elemId).innerHTML = renderAvatarHTML(avatar);
+  setAvatarElement(document.getElementById(elemId), avatar);
 }

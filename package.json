@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "check:ids": "node scripts/check-dom-ids.js",
-    "lint": "eslint server.js index.js scripts src test",
+    "lint": "eslint server.js index.js scripts src test public/app.js public/js",
     "start": "node server.js",
     "test": "node --test test/integration.test.js"
   },
