@@ -1,7 +1,7 @@
 {
   "name": "shareq",
   "version": "1.9.0",
-  "description": "",
+  "description": "共享卡拉OK歌单系统，专为多人 KTV 聚会设计的实时点歌 Web 应用",
   "main": "server.js",
   "scripts": {
     "check:ids": "node scripts/check-dom-ids.js",
@@ -14,10 +14,20 @@
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run check:ids && npm test && npm run test:e2e"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "karaoke",
+    "ktv",
+    "playlist",
+    "realtime",
+    "song-request",
+    "socket.io"
+  ],
+  "author": "uucky",
   "license": "ISC",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
