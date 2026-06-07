@@ -1,4 +1,4 @@
-import { clearChildren, createElement, escapeHtml, getSafeHttpUrl } from './dom.js';
+import { clearChildren, createElement, getSafeHttpUrl } from './dom.js';
 
 function getSafeAvatarImageSrc(avatarData) {
   const av = String(avatarData || '');
@@ -41,18 +41,6 @@ export function createAvatarElement(avatarData, className = '') {
 export function setAvatarElement(container, avatar, className = '') {
   clearChildren(container);
   container.appendChild(createAvatarElement(avatar, className));
-}
-
-export function renderAvatarHTML(avatarData, className = '') {
-  const av = String(avatarData || '🎤');
-  const imageSrc = getSafeAvatarImageSrc(av);
-  const safeClassName = escapeHtml(className);
-
-  if (imageSrc) {
-    return `<img src="${escapeHtml(imageSrc)}" class="${safeClassName}" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;" onerror="this.onerror=null; this.outerHTML='🎤';">`;
-  }
-
-  return `<span class="${safeClassName}" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:inherit;">${escapeHtml(av)}</span>`;
 }
 
 export function resizeAndSetAvatar(file, callback) {

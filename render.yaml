@@ -2,9 +2,13 @@ services:
   - type: web
     name: shareq
     env: node
-    plan: free
-    buildCommand: npm install
+    plan: starter
+    buildCommand: npm ci
     startCommand: node server.js
+    disk:
+      name: shareq-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
     envVars:
       - key: PORT
         value: 3000

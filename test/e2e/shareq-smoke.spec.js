@@ -21,7 +21,7 @@ function listen(server) {
 async function createTestServer() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shareq-e2e-'));
   const shareq = createShareQServer({
-    dataFile: path.join(tmpDir, 'rooms.json'),
+    databaseFile: path.join(tmpDir, 'shareq.sqlite'),
     enableRequestLog: false,
     logger: silentLogger,
     saveIntervalMs: 0

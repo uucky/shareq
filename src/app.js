@@ -1,5 +1,4 @@
 import express from 'express';
-import fs from 'node:fs';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +7,7 @@ import { Server } from 'socket.io';
 import { registerSocketHandlers } from './socket-handlers.js';
 import {
   loadRooms,
-  resolveDataFile,
+  resolveDatabaseFile,
   saveRooms as saveRoomsToFile
 } from './storage.js';
 
@@ -19,10 +18,10 @@ const appDir = path.dirname(srcDir);
 export function createShareQServer(options = {}) {
   const logger = options.logger || console;
   const publicPath = options.publicPath || path.join(appDir, 'public');
-  const dataFile = resolveDataFile({
+  const databaseFile = resolveDatabaseFile({
     appDir,
     dataDir: options.dataDir || process.env.DATA_DIR,
-    dataFile: options.dataFile || process.env.DATA_FILE
+    databaseFile: options.databaseFile || process.env.DATABASE_FILE
   });
 
   const app = express();
@@ -41,11 +40,11 @@ export function createShareQServer(options = {}) {
     }
   });
 
-  const roomsData = options.roomsData || loadRooms(dataFile, logger);
+  const roomsData = options.roomsData || loadRooms(databaseFile, logger);
   const activeConnections = new Map();
   const pendingDedications = new Map();
 
-  const saveRooms = () => saveRoomsToFile(roomsData, dataFile, logger);
+  const saveRooms = () => saveRoomsToFile(roomsData, databaseFile, logger);
   const saveIntervalMs = options.saveIntervalMs ?? 5 * 60 * 1000;
   let saveInterval = null;
   if (saveIntervalMs > 0) {
@@ -53,11 +52,6 @@ export function createShareQServer(options = {}) {
     saveInterval.unref?.();
   }
 
-  logger.log(`[STARTUP] Serving static files from: ${publicPath}`);
-  logger.log(`[STARTUP] Public folder exists: ${fs.existsSync(publicPath)}`);
-  if (fs.existsSync(publicPath)) {
-    logger.log('[STARTUP] Public folder contents:', fs.readdirSync(publicPath));
-  }
   app.use(express.static(publicPath));
 
   // Fallback to index.html using RegExp for Express 5 compatibility.
@@ -101,7 +95,7 @@ export function createShareQServer(options = {}) {
     roomsData,
     activeConnections,
     pendingDedications,
-    dataFile,
+    databaseFile,
     saveRooms,
     close
   };
