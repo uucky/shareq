@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-    tags:
-      - 'v*'
   pull_request:
 
 permissions:
@@ -16,6 +14,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.release_tag.outputs.is_release }}
+      tag: ${{ steps.release_tag.outputs.tag }}
 
     steps:
       - name: Check out repository
@@ -35,6 +36,50 @@ jobs:
 
       - name: Run verification
         run: npm run verify
+
+      - name: Detect release tag
+        id: release_tag
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          tag=''
+
+          if [[ "$GITHUB_EVENT_NAME" == 'push' && "$GITHUB_REF" == "refs/heads/$DEFAULT_BRANCH" ]]; then
+              remote="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+
+              if [[ "$GITHUB_SERVER_URL" == 'https://github.com' ]]; then
+                  remote="https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
+              fi
+
+              for attempt in {1..5}; do
+                  tag="$(
+                      git ls-remote --tags "$remote" 'refs/tags/v*' |
+                          awk -v sha="$GITHUB_SHA" '
+                              $1 == sha && $2 ~ /^refs\/tags\/v/ {
+                                  sub(/\^\{\}$/, "", $2)
+                                  sub(/^refs\/tags\//, "", $2)
+                                  print $2
+                                  exit
+                              }
+                          '
+                  )"
+
+                  [[ -n "$tag" ]] && break
+                  sleep 2
+              done
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$tag" ]]; then
+              echo 'is_release=true' >> "$GITHUB_OUTPUT"
+          else
+              echo 'is_release=false' >> "$GITHUB_OUTPUT"
+          fi
 
   docker:
     name: Docker
@@ -66,14 +111,15 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ steps.image.outputs.name }}
+          flavor: latest=false
           tags: |
             type=ref,event=branch
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ !contains(github.ref_name, '-') }}
+            type=ref,event=pr
+            type=raw,value=${{ needs.test.outputs.tag || 'v0.0.0' }},enable=${{ needs.test.outputs.is_release == 'true' }}
+            type=semver,pattern={{version}},value=${{ needs.test.outputs.tag || 'v0.0.0' }},enable=${{ needs.test.outputs.is_release == 'true' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.test.outputs.tag || 'v0.0.0' }},enable=${{ needs.test.outputs.is_release == 'true' && !contains(needs.test.outputs.tag, '-') }}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
 
       - name: Build and publish Docker image
         uses: docker/build-push-action@v7
@@ -88,8 +134,10 @@ jobs:
   release:
     name: GitHub Release
     runs-on: ubuntu-latest
-    needs: docker
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - docker
+      - test
+    if: github.event_name == 'push' && needs.test.outputs.is_release == 'true'
     permissions:
       contents: write
 
@@ -100,10 +148,12 @@ jobs:
       - name: Extract changelog notes
         id: notes
         shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.test.outputs.tag }}
         run: |
           notes_file="$(mktemp)"
 
-          if awk -v tag="$GITHUB_REF_NAME" '
+          if awk -v tag="$RELEASE_TAG" '
               index($0, "## [" tag "]") == 1 {
                   in_section = 1
                   found = 1
@@ -138,10 +188,12 @@ jobs:
         if: steps.notes.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "${{ steps.notes.outputs.path }}"
+          RELEASE_TAG: ${{ needs.test.outputs.tag }}
+        run: gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "${{ steps.notes.outputs.path }}"
 
       - name: Create GitHub release with generated notes
         if: steps.notes.outputs.found != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+          RELEASE_TAG: ${{ needs.test.outputs.tag }}
+        run: gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes
