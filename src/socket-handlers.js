@@ -20,6 +20,130 @@ import {
   normalizeRoomId
 } from './rooms.js';
 
+const INVALID_REQUEST_MESSAGE = '请求参数无效，请刷新后重试';
+const INVALID_JOIN_MESSAGE = '房间号、昵称或用户 ID 无效，请检查后重试';
+const INVALID_SONG_MESSAGE = '点歌信息无效，请填写歌曲名称';
+const INVALID_DEDICATION_MESSAGE = '指名点歌信息无效';
+
+function isPayloadObject(payload) {
+  return payload !== null && typeof payload === 'object' && !Array.isArray(payload);
+}
+
+function normalizeRequiredString(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue === '' ? null : trimmedValue;
+}
+
+function normalizeOptionalString(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  return value.trim();
+}
+
+function normalizeAvatar(value) {
+  if (typeof value !== 'string') {
+    return DEFAULT_AVATAR;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue === '' ? DEFAULT_AVATAR : trimmedValue;
+}
+
+function validateJoinPayload(payload) {
+  if (!isPayloadObject(payload)) {
+    return null;
+  }
+
+  const roomId = normalizeRequiredString(payload.roomId);
+  const username = normalizeRequiredString(payload.username);
+  const userId = normalizeRequiredString(payload.userId);
+  if (!roomId || !username || !userId) {
+    return null;
+  }
+
+  return {
+    roomId: normalizeRoomId(roomId),
+    username,
+    avatar: normalizeAvatar(payload.avatar),
+    userId
+  };
+}
+
+function validateProfilePayload(payload) {
+  if (!isPayloadObject(payload)) {
+    return null;
+  }
+
+  const username = normalizeRequiredString(payload.username);
+  if (!username) {
+    return null;
+  }
+
+  return {
+    username,
+    avatar: normalizeAvatar(payload.avatar)
+  };
+}
+
+function validateSongPayload(payload) {
+  if (!isPayloadObject(payload)) {
+    return null;
+  }
+
+  const title = normalizeRequiredString(payload.title);
+  const singer = normalizeOptionalString(payload.singer);
+  const link = normalizeOptionalString(payload.link);
+  if (!title || singer === null || link === null) {
+    return null;
+  }
+
+  return { title, singer, link };
+}
+
+function validateStringIdPayload(payload, key) {
+  if (!isPayloadObject(payload)) {
+    return null;
+  }
+
+  return normalizeRequiredString(payload[key]);
+}
+
+function validateDedicationPayload(payload) {
+  const song = validateSongPayload(payload);
+  if (!song) {
+    return null;
+  }
+
+  const targetUserId = validateStringIdPayload(payload, 'targetUserId');
+  if (!targetUserId) {
+    return null;
+  }
+
+  return { ...song, targetUserId };
+}
+
+function validateDedicationResponsePayload(payload) {
+  const id = validateStringIdPayload(payload, 'id');
+  if (!id || typeof payload.accept !== 'boolean') {
+    return null;
+  }
+
+  return {
+    id,
+    accept: payload.accept
+  };
+}
+
 export function registerSocketHandlers({
   io,
   roomsData,
@@ -67,10 +191,19 @@ export function registerSocketHandlers({
   io.on('connection', socket => {
     logger.log(`Socket connected: ${socket.id}`);
 
-    socket.on('join-room', ({ roomId, username, avatar, userId }) => {
-      const normRoomId = normalizeRoomId(roomId);
-      const normUsername = String(username).trim();
-      const cleanUserId = String(userId);
+    socket.on('join-room', payload => {
+      const joinPayload = validateJoinPayload(payload);
+      if (!joinPayload) {
+        socket.emit('join-failed', { message: INVALID_JOIN_MESSAGE });
+        return;
+      }
+
+      const {
+        roomId: normRoomId,
+        username: normUsername,
+        avatar,
+        userId: cleanUserId
+      } = joinPayload;
       const room = getOrCreateRoom(normRoomId);
 
       const roomUsers = getRoomUsers(normRoomId);
@@ -102,7 +235,7 @@ export function registerSocketHandlers({
       activeConnections.set(socket.id, {
         roomId: normRoomId,
         username: normUsername,
-        avatar: avatar || DEFAULT_AVATAR,
+        avatar,
         userId: cleanUserId
       });
 
@@ -122,21 +255,27 @@ export function registerSocketHandlers({
       emitRoles(normRoomId, room);
     });
 
-    socket.on('update-profile', ({ username, avatar }) => {
+    socket.on('update-profile', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
       }
 
-      const oldUsername = userData.username;
-      userData.username = String(username).trim();
-      userData.avatar = avatar;
+      const profilePayload = validateProfilePayload(payload);
+      if (!profilePayload) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        return;
+      }
 
-      logger.log(`User "${oldUsername}" in room ${userData.roomId} updated profile to "${userData.username}" / ${avatar}`);
+      const oldUsername = userData.username;
+      userData.username = profilePayload.username;
+      userData.avatar = profilePayload.avatar;
+
+      logger.log(`User "${oldUsername}" in room ${userData.roomId} updated profile to "${userData.username}" / ${profilePayload.avatar}`);
       io.to(userData.roomId).emit('users-updated', getRoomUsers(userData.roomId));
     });
 
-    socket.on('add-song', ({ title, singer, link }) => {
+    socket.on('add-song', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -147,7 +286,13 @@ export function registerSocketHandlers({
         return;
       }
 
-      const result = addSong(room, userData, { title, singer, link });
+      const songPayload = validateSongPayload(payload);
+      if (!songPayload) {
+        socket.emit('system-message', { type: 'error', text: INVALID_SONG_MESSAGE });
+        return;
+      }
+
+      const result = addSong(room, userData, songPayload);
 
       io.to(userData.roomId).emit('playlist-updated', room.songs);
       io.to(userData.roomId).emit('system-message', {
@@ -157,7 +302,7 @@ export function registerSocketHandlers({
       saveRooms();
     });
 
-    socket.on('dedicate-song', ({ title, singer, link, targetUserId }) => {
+    socket.on('dedicate-song', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -168,6 +313,13 @@ export function registerSocketHandlers({
         return;
       }
 
+      const dedicationPayload = validateDedicationPayload(payload);
+      if (!dedicationPayload) {
+        socket.emit('dedication-failed', { message: INVALID_DEDICATION_MESSAGE });
+        return;
+      }
+
+      const { title, singer, link, targetUserId } = dedicationPayload;
       let targetSocketId = null;
       let targetUsername = '';
       for (const [socketId, connection] of activeConnections.entries()) {
@@ -209,7 +361,14 @@ export function registerSocketHandlers({
       socket.emit('dedication-pending', { targetUsername, title });
     });
 
-    socket.on('respond-dedication', ({ id, accept }) => {
+    socket.on('respond-dedication', payload => {
+      const responsePayload = validateDedicationResponsePayload(payload);
+      if (!responsePayload) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        return;
+      }
+
+      const { id, accept } = responsePayload;
       const dedication = pendingDedications.get(id);
       if (!dedication) {
         return;
@@ -255,7 +414,7 @@ export function registerSocketHandlers({
       }
     });
 
-    socket.on('prioritize-song', ({ songId }) => {
+    socket.on('prioritize-song', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -263,6 +422,12 @@ export function registerSocketHandlers({
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      const songId = validateStringIdPayload(payload, 'songId');
+      if (!songId) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
         return;
       }
 
@@ -279,7 +444,7 @@ export function registerSocketHandlers({
       saveRooms();
     });
 
-    socket.on('delete-song', ({ songId }) => {
+    socket.on('delete-song', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -287,6 +452,12 @@ export function registerSocketHandlers({
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      const songId = validateStringIdPayload(payload, 'songId');
+      if (!songId) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
         return;
       }
 
@@ -431,7 +602,7 @@ export function registerSocketHandlers({
       saveRooms();
     });
 
-    socket.on('promote-moderator', ({ targetUserId }) => {
+    socket.on('promote-moderator', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -439,6 +610,12 @@ export function registerSocketHandlers({
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      const targetUserId = validateStringIdPayload(payload, 'targetUserId');
+      if (!targetUserId) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
         return;
       }
 
@@ -451,7 +628,7 @@ export function registerSocketHandlers({
       saveRooms();
     });
 
-    socket.on('transfer-host', ({ targetUserId }) => {
+    socket.on('transfer-host', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -459,6 +636,12 @@ export function registerSocketHandlers({
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      const targetUserId = validateStringIdPayload(payload, 'targetUserId');
+      if (!targetUserId) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
         return;
       }
 
@@ -471,7 +654,7 @@ export function registerSocketHandlers({
       saveRooms();
     });
 
-    socket.on('kick-user', ({ targetSocketId }) => {
+    socket.on('kick-user', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -479,6 +662,12 @@ export function registerSocketHandlers({
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      const targetSocketId = validateStringIdPayload(payload, 'targetSocketId');
+      if (!targetSocketId) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
         return;
       }
 
@@ -524,7 +713,7 @@ export function registerSocketHandlers({
       io.to(userData.roomId).emit('session-ended');
     });
 
-    socket.on('send-reaction', ({ type }) => {
+    socket.on('send-reaction', payload => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -532,6 +721,12 @@ export function registerSocketHandlers({
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      const type = validateStringIdPayload(payload, 'type');
+      if (!type) {
+        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
         return;
       }
 

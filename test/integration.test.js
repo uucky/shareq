@@ -152,6 +152,25 @@ test('duplicate usernames in the same room are rejected', async () => {
   }
 });
 
+test('malformed join-room payload is rejected without creating a room', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    const joinFailedPromise = waitForSocket(client, 'join-failed');
+    client.emit('join-room', null);
+
+    const failure = await joinFailedPromise;
+
+    assert.match(failure.message, /房间号/);
+    assert.deepEqual(server.shareq.roomsData, {});
+    assert.equal(server.shareq.activeConnections.size, 0);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
 test('adding a song broadcasts playlist and persists room data', async () => {
   const server = await createTestServer();
   let client;
@@ -180,6 +199,89 @@ test('adding a song broadcasts playlist and persists room data', async () => {
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
   } finally {
     await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('add-song rejects empty and invalid payloads without mutating the queue', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'INVALIDSONGS',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const emptyTitlePromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: ' ',
+      singer: '周杰伦',
+      link: ''
+    });
+    const emptyTitleError = await emptyTitlePromise;
+
+    assert.equal(emptyTitleError.type, 'error');
+    assert.equal(server.shareq.roomsData.INVALIDSONGS.songs.length, 0);
+
+    const invalidSingerPromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: {},
+      link: ''
+    });
+    const invalidSingerError = await invalidSingerPromise;
+
+    assert.equal(invalidSingerError.type, 'error');
+    assert.equal(server.shareq.roomsData.INVALIDSONGS.songs.length, 0);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('dedicate-song rejects invalid payloads without creating pending dedications', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'DEDICATE',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'DEDICATE',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const emptyTitlePromise = waitForSocket(alice, 'dedication-failed');
+    alice.emit('dedicate-song', {
+      title: '',
+      singer: '周杰伦',
+      link: '',
+      targetUserId: 'user-2'
+    });
+    const emptyTitleFailure = await emptyTitlePromise;
+
+    assert.match(emptyTitleFailure.message, /指名点歌/);
+    assert.equal(server.shareq.pendingDedications.size, 0);
+    assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
+
+    const malformedPromise = waitForSocket(alice, 'dedication-failed');
+    alice.emit('dedicate-song', null);
+    const malformedFailure = await malformedPromise;
+
+    assert.match(malformedFailure.message, /指名点歌/);
+    assert.equal(server.shareq.pendingDedications.size, 0);
+    assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
+  } finally {
+    await closeTestServer(server, clients);
   }
 });
 
