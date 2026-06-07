@@ -1,513 +1,734 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShareQ - KTV卡拉OK实时点歌歌单</title>
-  <!-- SEO & Meta -->
-  <meta name="description" content="ShareQ - 专为卡拉OK活动设计的实时点歌歌单小程序，支持多人房间、置顶优先、打乱顺序、撤销前进、实时同步与个性头像。">
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Stylesheet -->
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  
-  <div class="app-container">
-    
-    <!-- LOGIN / ENTRY VIEW -->
-    <div id="login-view" class="view-card">
-      <div class="brand-header animate-glow">
-        <div class="logo-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-        <h1 id="lobby-logo" style="cursor: pointer;" title="ShareQ 共享卡拉OK歌单系统 by uucky">ShareQ</h1>
-        <p class="subtitle">KTV 实时点歌歌单</p>
-      </div>
-
-      <div class="form-container">
-        <!-- Step 1: User Profile Selection -->
-        <div class="section-title">
-          <span class="step-num">1</span>
-          <h3>设置你的歌手档案</h3>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShareQ - KTV卡拉OK实时点歌歌单</title>
+    <!-- SEO & Meta -->
+    <meta
+      name="description"
+      content="ShareQ - 专为卡拉OK活动设计的实时点歌歌单小程序，支持多人房间、置顶优先、打乱顺序、撤销前进、实时同步与个性头像。"
+    />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- LOGIN / ENTRY VIEW -->
+      <div id="login-view" class="view-card">
+        <div class="brand-header animate-glow">
+          <div class="logo-icon"><i class="fa-solid fa-microphone-lines"></i></div>
+          <h1 id="lobby-logo" style="cursor: pointer" title="ShareQ 共享卡拉OK歌单系统 by uucky">ShareQ</h1>
+          <p class="subtitle">KTV 实时点歌歌单</p>
         </div>
-        
-        <div class="profile-setup">
-          <div class="avatar-preview-wrapper">
-            <div id="setup-avatar-preview" class="avatar-circle pulse-glow">🎤</div>
-            <button type="button" id="randomize-avatar-btn" class="icon-btn-secondary" title="随机生成">
-              <i class="fa-solid fa-shuffle"></i>
-            </button>
-            <button type="button" id="setup-upload-avatar-btn" class="icon-btn-secondary upload-avatar-trigger-btn" title="上传头像图片">
-              <i class="fa-solid fa-camera"></i>
-            </button>
-            <input type="file" id="setup-avatar-file" accept="image/*" style="display: none;">
+
+        <div class="form-container">
+          <!-- Step 1: User Profile Selection -->
+          <div class="section-title">
+            <span class="step-num">1</span>
+            <h3>设置你的歌手档案</h3>
           </div>
-          
-          <div class="input-group">
-            <label for="setup-username">歌手昵称</label>
-            <div class="input-with-action">
-              <input type="text" id="setup-username" placeholder="请输入你的大名..." maxlength="15">
-              <button type="button" id="randomize-name-btn" class="btn-text">随机</button>
-            </div>
-          </div>
-        </div>
 
-        <div class="avatar-selector-grid" id="avatar-grid">
-          <!-- Populated by JavaScript with KTV-themed emojis -->
-        </div>
-
-        <!-- Step 2: Join or Create Room -->
-        <div class="section-title">
-          <span class="step-num">2</span>
-          <h3>进入 KTV 房间</h3>
-        </div>
-
-        <div class="tab-container">
-          <button type="button" class="tab-btn active" data-tab="join">加入房间</button>
-          <button type="button" class="tab-btn" data-tab="create">创建新房间</button>
-        </div>
-
-        <!-- Join Form -->
-        <div id="tab-join-content" class="tab-content active">
-          <div class="input-group">
-            <label for="room-id-input">房间号 (Room Number)</label>
-            <input type="text" id="room-id-input" placeholder="输入 4-6 位数字或字母房号" maxlength="10">
-          </div>
-          <button type="button" id="join-room-btn" class="btn btn-primary btn-block">
-            <i class="fa-solid fa-arrow-right-to-bracket"></i> 确认进入房间
-          </button>
-          
-          <!-- Previously Joined Rooms List -->
-          <div id="history-rooms-section" class="hidden" style="margin-top: 20px; border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 15px;">
-            <label style="font-size: 0.85rem; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px; display: block; letter-spacing: 0.03em;">
-              <i class="fa-solid fa-clock-rotate-left"></i> 最近加入的歌房
-            </label>
-            <div id="history-rooms-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; padding-right: 4px;">
-              <!-- JS Rendered -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Create Form -->
-        <div id="tab-create-content" class="tab-content">
-          <div class="create-room-info">
-            <p>系统将随机生成一个唯一的房间号，您可以将链接发给朋友，大家即可加入同一个房间实时点歌！</p>
-          </div>
-          <button type="button" id="create-room-btn" class="btn btn-success btn-block">
-            <i class="fa-solid fa-square-plus"></i> 创建并开启点歌房
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MAIN KTV ROOM VIEW -->
-    <div id="room-view" class="hidden">
-      <!-- Corner Easter Egg Download Icon -->
-      <button type="button" id="corner-egg-btn" class="corner-egg-icon" title="导出 KTV 歌单存档 (隐藏彩蛋)">
-        <i class="fa-solid fa-file-export"></i>
-      </button>
-
-      <!-- HEADER -->
-      <header class="room-header">
-        <div class="header-left">
-          <button type="button" id="leave-room-btn" class="btn-back-home" title="返回首页重新输入房间号">
-            <i class="fa-solid fa-house"></i>
-          </button>
-          <div class="room-logo" id="brand-logo-egg" title="ShareQ 共享卡拉OK歌单系统 by uucky" style="cursor: pointer;">
-            <i class="fa-solid fa-microphone-lines"></i>
-            <span class="brand-text">ShareQ</span>
-          </div>
-          <div class="room-badge" id="room-badge-btn" title="点击复制分享链接">
-            <span class="badge-label">房间号:</span>
-            <span id="display-room-id" class="badge-value">------</span>
-            <i class="fa-solid fa-copy"></i>
-          </div>
-        </div>
-
-        <!-- Online Users Count -->
-        <div class="header-center">
-          <div class="online-users-wrapper" id="users-stack-trigger" title="双击导出歌单存档" style="cursor: pointer;">
-            <div class="online-users-list" id="users-stack">
-              <!-- Overlapping avatars here -->
-            </div>
-            <span class="online-count" id="online-count-txt">0 人在线</span>
-          </div>
-        </div>
-
-        <!-- Profile & Admin Settings in Top Right -->
-        <div class="header-right">
-          
-          <!-- Dropdown Settings & Admin Controls Menu -->
-          <div class="admin-menu-container hidden" id="admin-menu-container">
-            <button type="button" id="admin-menu-btn" class="icon-btn-secondary" title="更多选项">
-              <i class="fa-solid fa-ellipsis-vertical"></i>
-            </button>
-            <div class="admin-dropdown-menu hidden" id="admin-dropdown-menu">
-              <!-- General options for everyone -->
-              <button type="button" id="dropdown-theme-toggle-btn" class="dropdown-item">
-                <i class="fa-solid fa-sun"></i> 切换为亮色/暗色
+          <div class="profile-setup">
+            <div class="avatar-preview-wrapper">
+              <div id="setup-avatar-preview" class="avatar-circle pulse-glow">🎤</div>
+              <button type="button" id="randomize-avatar-btn" class="icon-btn-secondary" title="随机生成">
+                <i class="fa-solid fa-shuffle"></i>
               </button>
-              <button type="button" id="dropdown-compact-toggle-btn" class="dropdown-item">
-                <i class="fa-solid fa-compress"></i> 切换紧凑模式 (Compact)
+              <button
+                type="button"
+                id="setup-upload-avatar-btn"
+                class="icon-btn-secondary upload-avatar-trigger-btn"
+                title="上传头像图片"
+              >
+                <i class="fa-solid fa-camera"></i>
               </button>
-              <button type="button" id="dropdown-stats-btn" class="dropdown-item">
-                <i class="fa-solid fa-chart-simple"></i> 歌会数据统计 (Stats)
-              </button>
-              <button type="button" id="dropdown-about-btn" class="dropdown-item">
-                <i class="fa-solid fa-circle-info"></i> 关于 ShareQ
-              </button>
-              
-              <!-- Admin only section -->
-              <div id="admin-only-section" class="admin-only-section">
-                <div class="dropdown-label"><i class="fa-solid fa-shield-halved"></i> 管理员特权</div>
-                <button type="button" id="undo-btn" class="dropdown-item">
-                  <i class="fa-solid fa-rotate-left"></i> 撤销操作 (Undo)
-                </button>
-                <button type="button" id="redo-btn" class="dropdown-item">
-                  <i class="fa-solid fa-rotate-right"></i> 重做操作 (Redo)
-                </button>
-                <button type="button" id="prev-btn" class="dropdown-item">
-                  <i class="fa-solid fa-backward-step"></i> 播放上一首 (Previous)
-                </button>
-                <button type="button" id="end-session-btn" class="dropdown-item dropdown-item-danger">
-                  <i class="fa-solid fa-circle-xmark"></i> 结束本次歌会 (End Session)
-                </button>
+              <input type="file" id="setup-avatar-file" accept="image/*" style="display: none" />
+            </div>
+
+            <div class="input-group">
+              <label for="setup-username">歌手昵称</label>
+              <div class="input-with-action">
+                <input type="text" id="setup-username" placeholder="请输入你的大名..." maxlength="15" />
+                <button type="button" id="randomize-name-btn" class="btn-text">随机</button>
               </div>
             </div>
           </div>
 
-          <button type="button" id="user-profile-widget" class="profile-widget" title="修改歌手昵称/头像">
-            <span id="user-widget-name" class="widget-name">未登录</span>
-            <span id="user-widget-id" class="widget-id">ID: 000000</span>
-            <div id="user-widget-avatar" class="avatar-circle-sm">🎤</div>
-          </button>
-        </div>
-      </header>
-
-      <!-- MAIN LAYOUT GRID -->
-      <main class="room-main-grid">
-        
-        <!-- LEFT COLUMN: REQUEST SONG FORM & USER LIST -->
-        <section class="grid-col request-section">
-          <!-- Request Song Card -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-music"></i> 点歌机 / Request</h2>
-              <p class="card-subtitle">麦克风已就绪，点一首最爱的歌吧！</p>
-            </div>
-            
-            <form id="song-request-form" class="request-form">
-              <div class="input-group">
-                <label for="song-title">歌曲名 <span class="required">*</span></label>
-                <div class="input-wrapper">
-                  <i class="fa-solid fa-circle-play input-icon"></i>
-                  <input type="text" id="song-title" placeholder="例如：七里香" required autocomplete="off">
-                </div>
-              </div>
-
-              <div class="input-group">
-                <label for="song-singer">歌手名字 <span class="optional">(可选)</span></label>
-                <div class="input-wrapper">
-                  <i class="fa-solid fa-user-astronaut input-icon"></i>
-                  <input type="text" id="song-singer" placeholder="例如：周杰伦" autocomplete="off">
-                </div>
-              </div>
-
-              <div class="input-group">
-                <label for="song-link">伴奏链接 <span class="optional">(可选，如 YouTube/B站等)</span></label>
-                <div class="input-wrapper">
-                  <i class="fa-solid fa-link input-icon"></i>
-                  <input type="text" id="song-link" placeholder="例如：https://youtube.com/..." autocomplete="off">
-                </div>
-              </div>
-
-              <div class="input-group">
-                <label for="song-dedicate">指名点歌给某人 <span class="optional">(可选)</span></label>
-                <div class="input-wrapper">
-                  <i class="fa-solid fa-gift input-icon"></i>
-                  <select id="song-dedicate" class="custom-select">
-                    <option value="">-- 自己唱 (默认) --</option>
-                  </select>
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-primary btn-block submit-btn" id="confirm-request-btn">
-                <span class="btn-text">确认点歌 / Add to Queue</span>
-                <span class="btn-glow"></span>
-              </button>
-            </form>
-
-            <!-- Quick Suggestions -->
-            <div class="suggestions-container">
-              <h4>🔥 热门 KTV 点播推荐</h4>
-              <div class="suggestions-tags" id="suggestions-tags">
-                <!-- Autopopulated -->
-              </div>
-            </div>
+          <div class="avatar-selector-grid" id="avatar-grid">
+            <!-- Populated by JavaScript with KTV-themed emojis -->
           </div>
 
-          <!-- Room Members / User List Card -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-users"></i> 房间成员 / Members</h2>
-              <p class="card-subtitle">当前在线的好友及身份权限</p>
-            </div>
-            <div class="members-container" id="members-list-container">
-              <!-- Rendered via Javascript -->
-            </div>
-          </div>
-        </section>
-
-        <!-- RIGHT COLUMN: CURRENT PLAYLIST QUEUE & NOW PLAYING -->
-        <section class="grid-col playlist-section">
-          
-          <!-- ENLARGED NOW PLAYING HIGHLIGHT PANEL -->
-          <div class="now-playing-panel glass-card enlarged-playing" id="now-playing-panel">
-            <div class="playing-header">
-              <div class="playing-label">
-                <span class="indicator-dot blinking"></span> 正在演唱 / Now Playing
-              </div>
-              <!-- Accompaniment Link Button -->
-              <a href="#" target="_blank" id="playing-link-btn" class="accompaniment-btn hidden" title="打开点歌人提供的伴奏链接">
-                <i class="fa-solid fa-up-right-from-square"></i> 打开伴奏链接
-              </a>
-            </div>
-            
-            <div class="playing-content-wrapper" id="now-playing-content" style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; width:100%; padding: 10px 0;">
-              <!-- Left side: Avatar -->
-              <div class="playing-icon-wrapper" style="position:relative; width: 110px; height: 110px; flex-shrink:0; display:flex; justify-content:center; align-items:center;">
-                <div id="playing-music-note" class="pulse-glow" style="font-size:60px; animation: spin 8s linear infinite; display:flex; justify-content:center; align-items:center; width:100%; height:100%; background: rgba(255, 255, 255, 0.1); border-radius: 50%; border: 3px solid var(--color-primary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);">🎤</div>
-                <img id="playing-avatar-disc" src="" class="playing-avatar-disc hidden" style="position:absolute; inset:0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-primary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); animation: spin 8s linear infinite;">
-              </div>
-              
-              <!-- Center side: Details -->
-              <div class="playing-details-large" style="flex-grow:1; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                <h3 id="playing-title" class="playing-title-large" style="font-size: 2.2rem; margin-bottom: 4px;">等待点歌...</h3>
-                <p id="playing-singer" class="playing-singer-large" style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 12px;">点歌后即可在歌单开始</p>
-                <div class="playing-request-by-large" style="display: flex; justify-content: center; width: 100%;">
-                  <span id="playing-user-badge" class="badge-user-singing" style="background: linear-gradient(135deg, #00f0ff, #ff2a85); padding: 6px 16px; border-radius: 20px; color: white; font-weight: bold; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-microphone"></i> --</span>
-                  <span id="playing-dedicate-badge" class="dedicate-tag hidden" style="margin-left: 10px; vertical-align: middle;"></span>
-                </div>
-              </div>
-              
-              <!-- Right side: Visualizer -->
-              <div class="music-visualizer-large" id="visualizer-bars" style="flex-shrink:0; transform: scale(0.9);">
-                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              </div>
-            </div>
-
-            <!-- Audience Interactive Panel -->
-            <div class="audience-actions-panel" id="audience-actions-panel">
-              <div class="audience-actions-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span class="audience-action-title" style="margin-bottom: 0;">给歌手互动送礼：</span>
-                <button type="button" class="btn-reaction-mute" id="btn-reaction-mute" title="静音/取消静音礼物音效">
-                  <i class="fa-solid fa-volume-high"></i>
-                </button>
-              </div>
-              <div class="reaction-buttons-grid">
-                <button type="button" class="btn-reaction-gift" data-reaction="rose" title="送上玫瑰花 (Rose)">
-                  <span class="gift-emoji">🌹</span> 玫瑰花
-                </button>
-                <button type="button" class="btn-reaction-gift" data-reaction="clap" title="热烈鼓掌 (Applause)">
-                  <span class="gift-emoji">👏</span> 鼓掌
-                </button>
-                <button type="button" class="btn-reaction-gift" data-reaction="egg" title="扔臭鸡蛋 (Egg)">
-                  <span class="gift-emoji">🥚</span> 扔鸡蛋
-                </button>
-                <button type="button" class="btn-reaction-gift" data-reaction="shoe" title="扔旧皮鞋 (Shoe)">
-                  <span class="gift-emoji">👞</span> 丢皮鞋
-                </button>
-              </div>
-            </div>
+          <!-- Step 2: Join or Create Room -->
+          <div class="section-title">
+            <span class="step-num">2</span>
+            <h3>进入 KTV 房间</h3>
           </div>
 
-          <!-- PLAYLIST QUEUE CARD WITH TABS -->
-          <div class="glass-card playlist-card">
-            <div class="playlist-card-header">
-              <!-- Tabs Navigation -->
-              <div class="playlist-tabs">
-                <button type="button" class="playlist-tab-btn active" id="tab-upcoming-btn">
-                  <i class="fa-solid fa-list-ul"></i> 已点 <span id="song-count-badge" class="counter-badge">0 首</span>
-                </button>
-                <button type="button" class="playlist-tab-btn" id="tab-history-btn">
-                  <i class="fa-solid fa-clock-rotate-left"></i> 已唱 <span id="history-count-badge" class="counter-badge">0 首</span>
-                </button>
-                <button type="button" class="playlist-tab-btn hidden" id="tab-stats-btn">
-                  <i class="fa-solid fa-chart-simple"></i> 歌会统计 / Stats
-                </button>
-              </div>
-              
-              <!-- Queue Actions -->
-              <div class="queue-actions">
-                <button type="button" id="shuffle-btn" class="btn-action btn-action-orange" title="打乱所有未优先歌曲的顺序">
-                  <i class="fa-solid fa-shuffle"></i> 打乱歌单
-                </button>
-                <button type="button" id="next-btn" class="btn-action btn-action-purple hidden" title="切歌 (仅主持人/房管)">
-                  <i class="fa-solid fa-forward-step"></i> 切歌
-                </button>
-              </div>
-            </div>
-
-            <!-- Scrollable Playlist Containers -->
-            <div class="playlist-container" id="playlist-container">
-              <!-- Populated by JavaScript for upcoming songs -->
-            </div>
-            
-            <div class="playlist-container hidden" id="history-playlist-container">
-              <!-- Populated by JavaScript for completed history songs -->
-            </div>
-            
-            <div class="playlist-container hidden" id="stats-playlist-container">
-              <!-- Populated by JavaScript for statistics dashboard -->
-            </div>
-          </div> <!-- Close playlist-card -->
-        </section> <!-- Close playlist-section -->
-
-        <!-- THIRD COLUMN: SYSTEM MESSAGES / NOTIFICATIONS -->
-        <section class="grid-col notifications-section">
-          <!-- 消息 (Pending Dedications) -->
-          <div id="messages-panel" class="glass-card" style="padding:16px;">
-            <div class="card-header" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-              <h2 style="font-size:1.1rem;"><i class="fa-solid fa-envelope"></i> 消息</h2>
-              <span id="toast-history-badge" class="history-badge hidden">0</span>
-            </div>
-            <div id="pending-dedications-list" style="display:flex; flex-direction:column; gap:8px;">
-              <!-- Javascript populates this -->
-            </div>
+          <div class="tab-container">
+            <button type="button" class="tab-btn active" data-tab="join">加入房间</button>
+            <button type="button" class="tab-btn" data-tab="create">创建新房间</button>
           </div>
-          
-          <!-- 动态 (Activity Feed) -->
-          <div id="activity-feed-panel" style="flex:1; display:flex; flex-direction:column;">
-            <h3 style="font-size:0.9rem; opacity:0.6; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">动态</h3>
-            
-            <!-- Filter Tabs -->
-            <div class="toast-history-filters" style="display: flex; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); flex-wrap: wrap; margin-bottom:12px;">
-              <a href="#" class="toast-filter-link active" data-filter="all">全部</a>
-              <a href="#" class="toast-filter-link" data-filter="add">点歌</a>
-              <a href="#" class="toast-filter-link" data-filter="pin">优先</a>
-              <a href="#" class="toast-filter-link" data-filter="delete">删除</a>
-              <a href="#" class="toast-filter-link" data-filter="next">切歌</a>
+
+          <!-- Join Form -->
+          <div id="tab-join-content" class="tab-content active">
+            <div class="input-group">
+              <label for="room-id-input">房间号 (Room Number)</label>
+              <input type="text" id="room-id-input" placeholder="输入 4-6 位数字或字母房号" maxlength="10" />
             </div>
-
-            <div class="toast-history-list" id="toast-history-list" style="flex:1; overflow-y: auto; display:flex; flex-direction:column; gap:4px;">
-              <div class="no-history-msg">暂无动态记录</div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
-  </div>
-
-  <!-- Mobile Floating Bell Button -->
-  <div class="toast-history-trigger hidden-desktop" id="mobile-toast-trigger" title="消息与动态">
-    <i class="fa-solid fa-bell"></i>
-    <span class="history-badge hidden" id="mobile-toast-badge">0</span>
-  </div>
-
-  <!-- MODAL: EDIT USER PROFILE -->
-  <div id="profile-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>修改个人歌手信息</h3>
-        <button type="button" class="close-modal-btn" id="close-modal-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="profile-setup">
-          <div class="avatar-preview-wrapper">
-            <div id="modal-avatar-preview" class="avatar-circle">🎤</div>
-            <button type="button" id="modal-random-avatar-btn" class="icon-btn-secondary" title="随机生成">
-              <i class="fa-solid fa-shuffle"></i>
+            <button type="button" id="join-room-btn" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> 确认进入房间
             </button>
-            <button type="button" id="modal-upload-avatar-btn" class="icon-btn-secondary upload-avatar-trigger-btn" title="上传头像图片">
-              <i class="fa-solid fa-camera"></i>
-            </button>
-            <input type="file" id="modal-avatar-file" accept="image/*" style="display: none;">
-          </div>
-          <div class="input-group">
-            <label for="modal-username">修改昵称</label>
-            <input type="text" id="modal-username" placeholder="请输入你的新大名..." maxlength="15">
-          </div>
-        </div>
-        
-        <label class="section-label">选择新的卡通表情</label>
-        <div class="avatar-selector-grid" id="modal-avatar-grid">
-          <!-- Filled dynamically -->
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="modal-cancel-btn">取消</button>
-        <button type="button" class="btn btn-primary" id="modal-save-btn">保存更改</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL: DOWNLOAD SESSION RECORD (THE EASTER EGG MODAL) -->
-  <div id="archive-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>🎉 隐藏彩蛋：导出 KTV 歌单存档</h3>
-        <button type="button" class="close-modal-btn" id="close-archive-modal-btn">&times;</button>
-      </div>
-      <div class="modal-body text-center">
-        <div style="font-size: 3.5rem; margin-bottom: 15px; color: var(--color-success);">
-          <i class="fa-solid fa-file-invoice"></i>
+            <!-- Previously Joined Rooms List -->
+            <div
+              id="history-rooms-section"
+              class="hidden"
+              style="margin-top: 20px; border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 15px"
+            >
+              <label
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                  color: var(--color-secondary);
+                  margin-bottom: 8px;
+                  display: block;
+                  letter-spacing: 0.03em;
+                "
+              >
+                <i class="fa-solid fa-clock-rotate-left"></i> 最近加入的歌房
+              </label>
+              <div
+                id="history-rooms-list"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                  max-height: 140px;
+                  overflow-y: auto;
+                  padding-right: 4px;
+                "
+              >
+                <!-- JS Rendered -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Create Form -->
+          <div id="tab-create-content" class="tab-content">
+            <div class="create-room-info">
+              <p>系统将随机生成一个唯一的房间号，您可以将链接发给朋友，大家即可加入同一个房间实时点歌！</p>
+            </div>
+            <button type="button" id="create-room-btn" class="btn btn-success btn-block">
+              <i class="fa-solid fa-square-plus"></i> 创建并开启点歌房
+            </button>
+          </div>
         </div>
-        <p style="margin-bottom: 20px;">
-          恭喜你发现了隐藏入口！本功能将打包生成一份本次 KTV 演唱会话的精美网页报告，包括<strong>已唱歌单</strong>与<strong>待播歌单</strong>，记录下点歌顺序、演唱完成时间以及观众对各首歌曲的玫瑰、掌声、鸡蛋等热烈互动数据。
-        </p>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px;">
-          导出的 HTML 文件自带交互排序逻辑，双击打开即可通过表头对歌曲、歌手、点歌人或互动评分进行过滤与重新排序。
-        </p>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="archive-cancel-btn">关闭</button>
-        <button type="button" class="btn btn-success" id="archive-download-btn">
-          <i class="fa-solid fa-download"></i> 一键下载报告 (HTML)
+
+      <!-- MAIN KTV ROOM VIEW -->
+      <div id="room-view" class="hidden">
+        <!-- Corner Easter Egg Download Icon -->
+        <button type="button" id="corner-egg-btn" class="corner-egg-icon" title="导出 KTV 歌单存档 (隐藏彩蛋)">
+          <i class="fa-solid fa-file-export"></i>
         </button>
+
+        <!-- HEADER -->
+        <header class="room-header">
+          <div class="header-left">
+            <button type="button" id="leave-room-btn" class="btn-back-home" title="返回首页重新输入房间号">
+              <i class="fa-solid fa-house"></i>
+            </button>
+            <div
+              class="room-logo"
+              id="brand-logo-egg"
+              title="ShareQ 共享卡拉OK歌单系统 by uucky"
+              style="cursor: pointer"
+            >
+              <i class="fa-solid fa-microphone-lines"></i>
+              <span class="brand-text">ShareQ</span>
+            </div>
+            <div class="room-badge" id="room-badge-btn" title="点击复制分享链接">
+              <span class="badge-label">房间号:</span>
+              <span id="display-room-id" class="badge-value">------</span>
+              <i class="fa-solid fa-copy"></i>
+            </div>
+          </div>
+
+          <!-- Online Users Count -->
+          <div class="header-center">
+            <div class="online-users-wrapper" id="users-stack-trigger" title="双击导出歌单存档" style="cursor: pointer">
+              <div class="online-users-list" id="users-stack">
+                <!-- Overlapping avatars here -->
+              </div>
+              <span class="online-count" id="online-count-txt">0 人在线</span>
+            </div>
+          </div>
+
+          <!-- Profile & Admin Settings in Top Right -->
+          <div class="header-right">
+            <!-- Dropdown Settings & Admin Controls Menu -->
+            <div class="admin-menu-container hidden" id="admin-menu-container">
+              <button type="button" id="admin-menu-btn" class="icon-btn-secondary" title="更多选项">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+              </button>
+              <div class="admin-dropdown-menu hidden" id="admin-dropdown-menu">
+                <!-- General options for everyone -->
+                <button type="button" id="dropdown-theme-toggle-btn" class="dropdown-item">
+                  <i class="fa-solid fa-sun"></i> 切换为亮色/暗色
+                </button>
+                <button type="button" id="dropdown-compact-toggle-btn" class="dropdown-item">
+                  <i class="fa-solid fa-compress"></i> 切换紧凑模式 (Compact)
+                </button>
+                <button type="button" id="dropdown-stats-btn" class="dropdown-item">
+                  <i class="fa-solid fa-chart-simple"></i> 歌会数据统计 (Stats)
+                </button>
+                <button type="button" id="dropdown-about-btn" class="dropdown-item">
+                  <i class="fa-solid fa-circle-info"></i> 关于 ShareQ
+                </button>
+
+                <!-- Admin only section -->
+                <div id="admin-only-section" class="admin-only-section">
+                  <div class="dropdown-label"><i class="fa-solid fa-shield-halved"></i> 管理员特权</div>
+                  <button type="button" id="undo-btn" class="dropdown-item">
+                    <i class="fa-solid fa-rotate-left"></i> 撤销操作 (Undo)
+                  </button>
+                  <button type="button" id="redo-btn" class="dropdown-item">
+                    <i class="fa-solid fa-rotate-right"></i> 重做操作 (Redo)
+                  </button>
+                  <button type="button" id="prev-btn" class="dropdown-item">
+                    <i class="fa-solid fa-backward-step"></i> 播放上一首 (Previous)
+                  </button>
+                  <button type="button" id="end-session-btn" class="dropdown-item dropdown-item-danger">
+                    <i class="fa-solid fa-circle-xmark"></i> 结束本次歌会 (End Session)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" id="user-profile-widget" class="profile-widget" title="修改歌手昵称/头像">
+              <span id="user-widget-name" class="widget-name">未登录</span>
+              <span id="user-widget-id" class="widget-id">ID: 000000</span>
+              <div id="user-widget-avatar" class="avatar-circle-sm">🎤</div>
+            </button>
+          </div>
+        </header>
+
+        <!-- MAIN LAYOUT GRID -->
+        <main class="room-main-grid">
+          <!-- LEFT COLUMN: REQUEST SONG FORM & USER LIST -->
+          <section class="grid-col request-section">
+            <!-- Request Song Card -->
+            <div class="glass-card">
+              <div class="card-header">
+                <h2><i class="fa-solid fa-music"></i> 点歌机 / Request</h2>
+                <p class="card-subtitle">麦克风已就绪，点一首最爱的歌吧！</p>
+              </div>
+
+              <form id="song-request-form" class="request-form">
+                <div class="input-group">
+                  <label for="song-title">歌曲名 <span class="required">*</span></label>
+                  <div class="input-wrapper">
+                    <i class="fa-solid fa-circle-play input-icon"></i>
+                    <input type="text" id="song-title" placeholder="例如：七里香" required autocomplete="off" />
+                  </div>
+                </div>
+
+                <div class="input-group">
+                  <label for="song-singer">歌手名字 <span class="optional">(可选)</span></label>
+                  <div class="input-wrapper">
+                    <i class="fa-solid fa-user-astronaut input-icon"></i>
+                    <input type="text" id="song-singer" placeholder="例如：周杰伦" autocomplete="off" />
+                  </div>
+                </div>
+
+                <div class="input-group">
+                  <label for="song-link">伴奏链接 <span class="optional">(可选，如 YouTube/B站等)</span></label>
+                  <div class="input-wrapper">
+                    <i class="fa-solid fa-link input-icon"></i>
+                    <input type="text" id="song-link" placeholder="例如：https://youtube.com/..." autocomplete="off" />
+                  </div>
+                </div>
+
+                <div class="input-group">
+                  <label for="song-dedicate">指名点歌给某人 <span class="optional">(可选)</span></label>
+                  <div class="input-wrapper">
+                    <i class="fa-solid fa-gift input-icon"></i>
+                    <select id="song-dedicate" class="custom-select">
+                      <option value="">-- 自己唱 (默认) --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block submit-btn" id="confirm-request-btn">
+                  <span class="btn-text">确认点歌 / Add to Queue</span>
+                  <span class="btn-glow"></span>
+                </button>
+              </form>
+
+              <!-- Quick Suggestions -->
+              <div class="suggestions-container">
+                <h4>🔥 热门 KTV 点播推荐</h4>
+                <div class="suggestions-tags" id="suggestions-tags">
+                  <!-- Autopopulated -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Room Members / User List Card -->
+            <div class="glass-card">
+              <div class="card-header">
+                <h2><i class="fa-solid fa-users"></i> 房间成员 / Members</h2>
+                <p class="card-subtitle">当前在线的好友及身份权限</p>
+              </div>
+              <div class="members-container" id="members-list-container">
+                <!-- Rendered via Javascript -->
+              </div>
+            </div>
+          </section>
+
+          <!-- RIGHT COLUMN: CURRENT PLAYLIST QUEUE & NOW PLAYING -->
+          <section class="grid-col playlist-section">
+            <!-- ENLARGED NOW PLAYING HIGHLIGHT PANEL -->
+            <div class="now-playing-panel glass-card enlarged-playing" id="now-playing-panel">
+              <div class="playing-header">
+                <div class="playing-label"><span class="indicator-dot blinking"></span> 正在演唱 / Now Playing</div>
+                <!-- Accompaniment Link Button -->
+                <a
+                  href="#"
+                  target="_blank"
+                  id="playing-link-btn"
+                  class="accompaniment-btn hidden"
+                  title="打开点歌人提供的伴奏链接"
+                >
+                  <i class="fa-solid fa-up-right-from-square"></i> 打开伴奏链接
+                </a>
+              </div>
+
+              <div
+                class="playing-content-wrapper"
+                id="now-playing-content"
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  align-items: center;
+                  justify-content: space-between;
+                  width: 100%;
+                  padding: 10px 0;
+                "
+              >
+                <!-- Left side: Avatar -->
+                <div
+                  class="playing-icon-wrapper"
+                  style="
+                    position: relative;
+                    width: 110px;
+                    height: 110px;
+                    flex-shrink: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                  "
+                >
+                  <div
+                    id="playing-music-note"
+                    class="pulse-glow"
+                    style="
+                      font-size: 60px;
+                      animation: spin 8s linear infinite;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      width: 100%;
+                      height: 100%;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 50%;
+                      border: 3px solid var(--color-primary);
+                      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+                    "
+                  >
+                    🎤
+                  </div>
+                  <img
+                    id="playing-avatar-disc"
+                    src=""
+                    class="playing-avatar-disc hidden"
+                    style="
+                      position: absolute;
+                      inset: 0;
+                      width: 100%;
+                      height: 100%;
+                      border-radius: 50%;
+                      object-fit: cover;
+                      border: 3px solid var(--color-primary);
+                      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+                      animation: spin 8s linear infinite;
+                    "
+                  />
+                </div>
+
+                <!-- Center side: Details -->
+                <div
+                  class="playing-details-large"
+                  style="
+                    flex-grow: 1;
+                    text-align: center;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                  "
+                >
+                  <h3 id="playing-title" class="playing-title-large" style="font-size: 2.2rem; margin-bottom: 4px">
+                    等待点歌...
+                  </h3>
+                  <p
+                    id="playing-singer"
+                    class="playing-singer-large"
+                    style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 12px"
+                  >
+                    点歌后即可在歌单开始
+                  </p>
+                  <div class="playing-request-by-large" style="display: flex; justify-content: center; width: 100%">
+                    <span
+                      id="playing-user-badge"
+                      class="badge-user-singing"
+                      style="
+                        background: linear-gradient(135deg, #00f0ff, #ff2a85);
+                        padding: 6px 16px;
+                        border-radius: 20px;
+                        color: white;
+                        font-weight: bold;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                      "
+                      ><i class="fa-solid fa-microphone"></i> --</span
+                    >
+                    <span
+                      id="playing-dedicate-badge"
+                      class="dedicate-tag hidden"
+                      style="margin-left: 10px; vertical-align: middle"
+                    ></span>
+                  </div>
+                </div>
+
+                <!-- Right side: Visualizer -->
+                <div class="music-visualizer-large" id="visualizer-bars" style="flex-shrink: 0; transform: scale(0.9)">
+                  <span></span><span></span><span></span><span></span><span></span><span></span><span></span
+                  ><span></span>
+                </div>
+              </div>
+
+              <!-- Audience Interactive Panel -->
+              <div class="audience-actions-panel" id="audience-actions-panel">
+                <div
+                  class="audience-actions-header"
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px"
+                >
+                  <span class="audience-action-title" style="margin-bottom: 0">给歌手互动送礼：</span>
+                  <button type="button" class="btn-reaction-mute" id="btn-reaction-mute" title="静音/取消静音礼物音效">
+                    <i class="fa-solid fa-volume-high"></i>
+                  </button>
+                </div>
+                <div class="reaction-buttons-grid">
+                  <button type="button" class="btn-reaction-gift" data-reaction="rose" title="送上玫瑰花 (Rose)">
+                    <span class="gift-emoji">🌹</span> 玫瑰花
+                  </button>
+                  <button type="button" class="btn-reaction-gift" data-reaction="clap" title="热烈鼓掌 (Applause)">
+                    <span class="gift-emoji">👏</span> 鼓掌
+                  </button>
+                  <button type="button" class="btn-reaction-gift" data-reaction="egg" title="扔臭鸡蛋 (Egg)">
+                    <span class="gift-emoji">🥚</span> 扔鸡蛋
+                  </button>
+                  <button type="button" class="btn-reaction-gift" data-reaction="shoe" title="扔旧皮鞋 (Shoe)">
+                    <span class="gift-emoji">👞</span> 丢皮鞋
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PLAYLIST QUEUE CARD WITH TABS -->
+            <div class="glass-card playlist-card">
+              <div class="playlist-card-header">
+                <!-- Tabs Navigation -->
+                <div class="playlist-tabs">
+                  <button type="button" class="playlist-tab-btn active" id="tab-upcoming-btn">
+                    <i class="fa-solid fa-list-ul"></i> 已点
+                    <span id="song-count-badge" class="counter-badge">0 首</span>
+                  </button>
+                  <button type="button" class="playlist-tab-btn" id="tab-history-btn">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 已唱
+                    <span id="history-count-badge" class="counter-badge">0 首</span>
+                  </button>
+                  <button type="button" class="playlist-tab-btn hidden" id="tab-stats-btn">
+                    <i class="fa-solid fa-chart-simple"></i> 歌会统计 / Stats
+                  </button>
+                </div>
+
+                <!-- Queue Actions -->
+                <div class="queue-actions">
+                  <button
+                    type="button"
+                    id="shuffle-btn"
+                    class="btn-action btn-action-orange"
+                    title="打乱所有未优先歌曲的顺序"
+                  >
+                    <i class="fa-solid fa-shuffle"></i> 打乱歌单
+                  </button>
+                  <button
+                    type="button"
+                    id="next-btn"
+                    class="btn-action btn-action-purple hidden"
+                    title="切歌 (仅主持人/房管)"
+                  >
+                    <i class="fa-solid fa-forward-step"></i> 切歌
+                  </button>
+                </div>
+              </div>
+
+              <!-- Scrollable Playlist Containers -->
+              <div class="playlist-container" id="playlist-container">
+                <!-- Populated by JavaScript for upcoming songs -->
+              </div>
+
+              <div class="playlist-container hidden" id="history-playlist-container">
+                <!-- Populated by JavaScript for completed history songs -->
+              </div>
+
+              <div class="playlist-container hidden" id="stats-playlist-container">
+                <!-- Populated by JavaScript for statistics dashboard -->
+              </div>
+            </div>
+            <!-- Close playlist-card -->
+          </section>
+          <!-- Close playlist-section -->
+
+          <!-- THIRD COLUMN: SYSTEM MESSAGES / NOTIFICATIONS -->
+          <section class="grid-col notifications-section">
+            <!-- 消息 (Pending Dedications) -->
+            <div id="messages-panel" class="glass-card" style="padding: 16px">
+              <div
+                class="card-header"
+                style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center"
+              >
+                <h2 style="font-size: 1.1rem"><i class="fa-solid fa-envelope"></i> 消息</h2>
+                <span id="toast-history-badge" class="history-badge hidden">0</span>
+              </div>
+              <div id="pending-dedications-list" style="display: flex; flex-direction: column; gap: 8px">
+                <!-- Javascript populates this -->
+              </div>
+            </div>
+
+            <!-- 动态 (Activity Feed) -->
+            <div id="activity-feed-panel" style="flex: 1; display: flex; flex-direction: column">
+              <h3
+                style="
+                  font-size: 0.9rem;
+                  opacity: 0.6;
+                  margin-bottom: 8px;
+                  text-transform: uppercase;
+                  letter-spacing: 1px;
+                "
+              >
+                动态
+              </h3>
+
+              <!-- Filter Tabs -->
+              <div
+                class="toast-history-filters"
+                style="
+                  display: flex;
+                  gap: 12px;
+                  padding-bottom: 8px;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                  flex-wrap: wrap;
+                  margin-bottom: 12px;
+                "
+              >
+                <a href="#" class="toast-filter-link active" data-filter="all">全部</a>
+                <a href="#" class="toast-filter-link" data-filter="add">点歌</a>
+                <a href="#" class="toast-filter-link" data-filter="pin">优先</a>
+                <a href="#" class="toast-filter-link" data-filter="delete">删除</a>
+                <a href="#" class="toast-filter-link" data-filter="next">切歌</a>
+              </div>
+
+              <div
+                class="toast-history-list"
+                id="toast-history-list"
+                style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px"
+              >
+                <div class="no-history-msg">暂无动态记录</div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL: ABOUT SHAREQ -->
-  <div id="about-modal" class="modal-overlay hidden">
-    <div class="modal-card" style="max-width: 420px; text-align: center;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-circle-info"></i> 关于 ShareQ</h3>
-        <button type="button" class="close-modal-btn" id="close-about-modal-btn">&times;</button>
-      </div>
-      <div class="modal-body" style="padding: 28px 24px;">
-        <div style="font-size: 3.5rem; margin-bottom: 16px;">
-          <i class="fa-solid fa-microphone-lines" style="background: linear-gradient(135deg, #00f0ff, #ff2a85); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;"></i>
+    <!-- Mobile Floating Bell Button -->
+    <div class="toast-history-trigger hidden-desktop" id="mobile-toast-trigger" title="消息与动态">
+      <i class="fa-solid fa-bell"></i>
+      <span class="history-badge hidden" id="mobile-toast-badge">0</span>
+    </div>
+
+    <!-- MODAL: EDIT USER PROFILE -->
+    <div id="profile-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>修改个人歌手信息</h3>
+          <button type="button" class="close-modal-btn" id="close-modal-btn">&times;</button>
         </div>
-        <h2 style="font-family: var(--font-display); font-size: 2rem; margin: 0 0 6px 0; background: linear-gradient(135deg, #00f0ff, #ff2a85); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">ShareQ</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 20px 0;">共享卡拉OK歌单系统</p>
-        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: left; font-size: 0.88rem; line-height: 1.7; color: var(--text-secondary);">
-          <div style="margin-bottom: 8px;"><i class="fa-solid fa-user" style="color: var(--color-primary); width: 18px;"></i> &nbsp;作者：<strong>uucky</strong></div>
-          <div style="margin-bottom: 8px;"><i class="fa-solid fa-code-branch" style="color: var(--color-secondary); width: 18px;"></i> &nbsp;版本：<strong>v1.8.0</strong></div>
-          <div style="margin-bottom: 8px;"><i class="fa-solid fa-server" style="color: #00f0ff; width: 18px;"></i> &nbsp;技术栈：Node.js · Express · Socket.IO</div>
-          <div><i class="fa-solid fa-heart" style="color: #ff2a85; width: 18px;"></i> &nbsp;专为多人 KTV 聚会实时点歌设计</div>
+        <div class="modal-body">
+          <div class="profile-setup">
+            <div class="avatar-preview-wrapper">
+              <div id="modal-avatar-preview" class="avatar-circle">🎤</div>
+              <button type="button" id="modal-random-avatar-btn" class="icon-btn-secondary" title="随机生成">
+                <i class="fa-solid fa-shuffle"></i>
+              </button>
+              <button
+                type="button"
+                id="modal-upload-avatar-btn"
+                class="icon-btn-secondary upload-avatar-trigger-btn"
+                title="上传头像图片"
+              >
+                <i class="fa-solid fa-camera"></i>
+              </button>
+              <input type="file" id="modal-avatar-file" accept="image/*" style="display: none" />
+            </div>
+            <div class="input-group">
+              <label for="modal-username">修改昵称</label>
+              <input type="text" id="modal-username" placeholder="请输入你的新大名..." maxlength="15" />
+            </div>
+          </div>
+
+          <label class="section-label">选择新的卡通表情</label>
+          <div class="avatar-selector-grid" id="modal-avatar-grid">
+            <!-- Filled dynamically -->
+          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="close-about-ok-btn">好的</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">取消</button>
+          <button type="button" class="btn btn-primary" id="modal-save-btn">保存更改</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- REALTIME NOTIFICATIONS / TOAST CENTER -->
-  <div id="notification-center" class="notification-center"></div>
+    <!-- MODAL: DOWNLOAD SESSION RECORD (THE EASTER EGG MODAL) -->
+    <div id="archive-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>🎉 隐藏彩蛋：导出 KTV 歌单存档</h3>
+          <button type="button" class="close-modal-btn" id="close-archive-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body text-center">
+          <div style="font-size: 3.5rem; margin-bottom: 15px; color: var(--color-success)">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <p style="margin-bottom: 20px">
+            恭喜你发现了隐藏入口！本功能将打包生成一份本次 KTV
+            演唱会话的精美网页报告，包括<strong>已唱歌单</strong>与<strong>待播歌单</strong>，记录下点歌顺序、演唱完成时间以及观众对各首歌曲的玫瑰、掌声、鸡蛋等热烈互动数据。
+          </p>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px">
+            导出的 HTML 文件自带交互排序逻辑，双击打开即可通过表头对歌曲、歌手、点歌人或互动评分进行过滤与重新排序。
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="archive-cancel-btn">关闭</button>
+          <button type="button" class="btn btn-success" id="archive-download-btn">
+            <i class="fa-solid fa-download"></i> 一键下载报告 (HTML)
+          </button>
+        </div>
+      </div>
+    </div>
 
-  <!-- FLOATING EMOTICONS CONTAINER FOR STREAMING REACTIONS -->
-  <div id="floating-reaction-container" class="floating-reaction-container"></div>
+    <!-- MODAL: ABOUT SHAREQ -->
+    <div id="about-modal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 420px; text-align: center">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-circle-info"></i> 关于 ShareQ</h3>
+          <button type="button" class="close-modal-btn" id="close-about-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 28px 24px">
+          <div style="font-size: 3.5rem; margin-bottom: 16px">
+            <i
+              class="fa-solid fa-microphone-lines"
+              style="
+                background: linear-gradient(135deg, #00f0ff, #ff2a85);
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+              "
+            ></i>
+          </div>
+          <h2
+            style="
+              font-family: var(--font-display);
+              font-size: 2rem;
+              margin: 0 0 6px 0;
+              background: linear-gradient(135deg, #00f0ff, #ff2a85);
+              -webkit-background-clip: text;
+              background-clip: text;
+              -webkit-text-fill-color: transparent;
+            "
+          >
+            ShareQ
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 20px 0">共享卡拉OK歌单系统</p>
+          <div
+            style="
+              background: rgba(255, 255, 255, 0.04);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 12px;
+              padding: 16px;
+              text-align: left;
+              font-size: 0.88rem;
+              line-height: 1.7;
+              color: var(--text-secondary);
+            "
+          >
+            <div style="margin-bottom: 8px">
+              <i class="fa-solid fa-user" style="color: var(--color-primary); width: 18px"></i> &nbsp;作者：<strong
+                >uucky</strong
+              >
+            </div>
+            <div style="margin-bottom: 8px">
+              <i class="fa-solid fa-code-branch" style="color: var(--color-secondary); width: 18px"></i>
+              &nbsp;版本：<strong>v1.8.0</strong>
+            </div>
+            <div style="margin-bottom: 8px">
+              <i class="fa-solid fa-server" style="color: #00f0ff; width: 18px"></i> &nbsp;技术栈：Node.js · Express ·
+              Socket.IO
+            </div>
+            <div>
+              <i class="fa-solid fa-heart" style="color: #ff2a85; width: 18px"></i> &nbsp;专为多人 KTV 聚会实时点歌设计
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="close-about-ok-btn">好的</button>
+        </div>
+      </div>
+    </div>
 
+    <!-- REALTIME NOTIFICATIONS / TOAST CENTER -->
+    <div id="notification-center" class="notification-center"></div>
 
+    <!-- FLOATING EMOTICONS CONTAINER FOR STREAMING REACTIONS -->
+    <div id="floating-reaction-container" class="floating-reaction-container"></div>
 
-  <!-- SOCKET.IO CLIENT -->
-  <script src="/socket.io/socket.io.js"></script>
-  <!-- Frontend Javascript Logic -->
-  <script type="module" src="app.js"></script>
-</body>
+    <!-- SOCKET.IO CLIENT -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Frontend Javascript Logic -->
+    <script type="module" src="app.js"></script>
+  </body>
 </html>

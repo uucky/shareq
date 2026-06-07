@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "check:ids": "node scripts/check-dom-ids.js",
+    "format": "prettier --write public/index.html",
+    "format:check": "prettier --check public/index.html",
     "lint": "eslint server.js index.js scripts src test public/app.js public/js",
     "start": "node server.js",
     "test": "node --test test/integration.test.js"
@@ -20,6 +22,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.4.1",
+    "prettier": "^3.8.3",
     "socket.io-client": "^4.8.3"
   }
 }
