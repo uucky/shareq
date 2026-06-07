@@ -14,11 +14,7 @@ import {
   transferHost,
   undoPlaylist
 } from './room-actions.js';
-import {
-  DEFAULT_AVATAR,
-  getOrCreateRoom as getOrCreateRoomData,
-  normalizeRoomId
-} from './rooms.js';
+import { DEFAULT_AVATAR, getOrCreateRoom as getOrCreateRoomData, normalizeRoomId } from './rooms.js';
 
 const INVALID_REQUEST_MESSAGE = '请求参数无效，请刷新后重试';
 const INVALID_JOIN_MESSAGE = '房间号、昵称或用户 ID 无效，请检查后重试';
@@ -144,14 +140,7 @@ function validateDedicationResponsePayload(payload) {
   };
 }
 
-export function registerSocketHandlers({
-  io,
-  roomsData,
-  activeConnections,
-  pendingDedications,
-  logger,
-  saveRooms
-}) {
+export function registerSocketHandlers({ io, roomsData, activeConnections, pendingDedications, logger, saveRooms }) {
   function getRoomUsers(roomId) {
     const users = [];
     const roomSockets = io.sockets.adapter.rooms.get(roomId);
@@ -173,7 +162,7 @@ export function registerSocketHandlers({
 
   function getUserAvatar(roomId, userId) {
     const users = getRoomUsers(roomId);
-    const user = users.find(candidate => candidate.userId === userId);
+    const user = users.find((candidate) => candidate.userId === userId);
     return user ? user.avatar : DEFAULT_AVATAR;
   }
 
@@ -198,27 +187,22 @@ export function registerSocketHandlers({
     return false;
   }
 
-  io.on('connection', socket => {
+  io.on('connection', (socket) => {
     logger.log(`Socket connected: ${socket.id}`);
 
-    socket.on('join-room', payload => {
+    socket.on('join-room', (payload) => {
       const joinPayload = validateJoinPayload(payload);
       if (!joinPayload) {
         socket.emit('join-failed', { message: INVALID_JOIN_MESSAGE });
         return;
       }
 
-      const {
-        roomId: normRoomId,
-        username: normUsername,
-        avatar,
-        userId: cleanUserId
-      } = joinPayload;
+      const { roomId: normRoomId, username: normUsername, avatar, userId: cleanUserId } = joinPayload;
       const room = getOrCreateRoom(normRoomId);
 
       const roomUsers = getRoomUsers(normRoomId);
       const isNameTaken = roomUsers.some(
-        user => user.username.toLowerCase() === normUsername.toLowerCase() && user.userId !== cleanUserId
+        (user) => user.username.toLowerCase() === normUsername.toLowerCase() && user.userId !== cleanUserId
       );
       if (isNameTaken) {
         socket.emit('join-failed', { message: `昵称“${normUsername}”已在此房间中被占用，请更换昵称后重新加入！` });
@@ -265,7 +249,7 @@ export function registerSocketHandlers({
       emitRoles(normRoomId, room);
     });
 
-    socket.on('update-profile', payload => {
+    socket.on('update-profile', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -281,11 +265,13 @@ export function registerSocketHandlers({
       userData.username = profilePayload.username;
       userData.avatar = profilePayload.avatar;
 
-      logger.log(`User "${oldUsername}" in room ${userData.roomId} updated profile to "${userData.username}" / ${profilePayload.avatar}`);
+      logger.log(
+        `User "${oldUsername}" in room ${userData.roomId} updated profile to "${userData.username}" / ${profilePayload.avatar}`
+      );
       io.to(userData.roomId).emit('users-updated', getRoomUsers(userData.roomId));
     });
 
-    socket.on('add-song', payload => {
+    socket.on('add-song', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -312,7 +298,7 @@ export function registerSocketHandlers({
       persistRooms(socket);
     });
 
-    socket.on('dedicate-song', payload => {
+    socket.on('dedicate-song', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -371,7 +357,7 @@ export function registerSocketHandlers({
       socket.emit('dedication-pending', { targetUsername, title });
     });
 
-    socket.on('respond-dedication', payload => {
+    socket.on('respond-dedication', (payload) => {
       const responsePayload = validateDedicationResponsePayload(payload);
       if (!responsePayload) {
         socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
@@ -394,11 +380,7 @@ export function registerSocketHandlers({
       const senderSocket = io.sockets.sockets.get(dedication.fromSocketId);
 
       if (accept) {
-        acceptDedication(
-          room,
-          dedication,
-          getUserAvatar(dedication.roomId, dedication.targetUserId)
-        );
+        acceptDedication(room, dedication, getUserAvatar(dedication.roomId, dedication.targetUserId));
         persistRooms(socket);
 
         io.to(dedication.roomId).emit('playlist-updated', room.songs);
@@ -424,7 +406,7 @@ export function registerSocketHandlers({
       }
     });
 
-    socket.on('prioritize-song', payload => {
+    socket.on('prioritize-song', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -454,7 +436,7 @@ export function registerSocketHandlers({
       persistRooms(socket);
     });
 
-    socket.on('delete-song', payload => {
+    socket.on('delete-song', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -612,7 +594,7 @@ export function registerSocketHandlers({
       persistRooms(socket);
     });
 
-    socket.on('promote-moderator', payload => {
+    socket.on('promote-moderator', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -638,7 +620,7 @@ export function registerSocketHandlers({
       persistRooms(socket);
     });
 
-    socket.on('transfer-host', payload => {
+    socket.on('transfer-host', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -664,7 +646,7 @@ export function registerSocketHandlers({
       persistRooms(socket);
     });
 
-    socket.on('kick-user', payload => {
+    socket.on('kick-user', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;
@@ -723,7 +705,7 @@ export function registerSocketHandlers({
       io.to(userData.roomId).emit('session-ended');
     });
 
-    socket.on('send-reaction', payload => {
+    socket.on('send-reaction', (payload) => {
       const userData = activeConnections.get(socket.id);
       if (!userData) {
         return;

@@ -93,9 +93,7 @@ export function normalizeRoomsJson(value) {
 
     const songs = Array.isArray(room.songs) ? room.songs : [];
     const alreadySung = Array.isArray(room.alreadySung) ? room.alreadySung : [];
-    const moderatorUserIds = Array.isArray(room.moderatorUserIds)
-      ? room.moderatorUserIds.map(String)
-      : [];
+    const moderatorUserIds = Array.isArray(room.moderatorUserIds) ? room.moderatorUserIds.map(String) : [];
 
     rooms[roomId] = {
       id: String(room.id || roomId),

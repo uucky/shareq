@@ -45,7 +45,7 @@ export function acceptDedication(room, dedication, requestedByAvatar, now = Date
 }
 
 export function prioritizeSong(room, songId, now = Date.now()) {
-  const songIndex = room.songs.findIndex(song => song.id === songId);
+  const songIndex = room.songs.findIndex((song) => song.id === songId);
   if (songIndex === -1) {
     return { changed: false, reason: 'not_found' };
   }
@@ -64,7 +64,7 @@ export function prioritizeSong(room, songId, now = Date.now()) {
 }
 
 export function deleteSong(room, userData, songId, now = Date.now()) {
-  const songIndex = room.songs.findIndex(song => song.id === songId);
+  const songIndex = room.songs.findIndex((song) => song.id === songId);
   if (songIndex === -1) {
     return { changed: false, reason: 'not_found' };
   }
@@ -90,8 +90,8 @@ export function shufflePlaylist(room, { random = Math.random, now = Date.now() }
 
   const nowPlaying = room.songs[0];
   const restSongs = room.songs.slice(1);
-  const prioritizedSongs = restSongs.filter(song => song.prioritized);
-  const unprioritizedSongs = restSongs.filter(song => !song.prioritized);
+  const prioritizedSongs = restSongs.filter((song) => song.prioritized);
+  const unprioritizedSongs = restSongs.filter((song) => !song.prioritized);
 
   for (let i = unprioritizedSongs.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));

@@ -14,14 +14,14 @@ async function shutdown(signal) {
 }
 
 process.on('SIGINT', () => {
-  shutdown('SIGINT').catch(err => {
+  shutdown('SIGINT').catch((err) => {
     console.error('Error during shutdown:', err);
     process.exit(1);
   });
 });
 
 process.on('SIGTERM', () => {
-  shutdown('SIGTERM').catch(err => {
+  shutdown('SIGTERM').catch((err) => {
     console.error('Error during shutdown:', err);
     process.exit(1);
   });

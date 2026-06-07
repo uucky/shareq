@@ -93,11 +93,7 @@ test('deleteSong allows host and moderators to delete another user song', () => 
 
 test('prioritizeSong moves a queued song directly after now playing', () => {
   const room = createRoom({
-    songs: [
-      createSong('current'),
-      createSong('second'),
-      createSong('third')
-    ]
+    songs: [createSong('current'), createSong('second'), createSong('third')]
   });
 
   const result = prioritizeSong(room, 'third', 2);
@@ -105,17 +101,16 @@ test('prioritizeSong moves a queued song directly after now playing', () => {
   assert.equal(result.changed, true);
   assert.equal(result.song.id, 'third');
   assert.equal(result.song.prioritized, true);
-  assert.deepEqual(room.songs.map(song => song.id), ['current', 'third', 'second']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['current', 'third', 'second']
+  );
   assert.equal(room.updatedAt, 2);
 });
 
 test('prioritizeSong marks the second queued song as prioritized without moving it', () => {
   const room = createRoom({
-    songs: [
-      createSong('current'),
-      createSong('second'),
-      createSong('third')
-    ]
+    songs: [createSong('current'), createSong('second'), createSong('third')]
   });
 
   const result = prioritizeSong(room, 'second', 2);
@@ -123,7 +118,10 @@ test('prioritizeSong marks the second queued song as prioritized without moving 
   assert.equal(result.changed, true);
   assert.equal(result.song.id, 'second');
   assert.equal(result.song.prioritized, true);
-  assert.deepEqual(room.songs.map(song => song.id), ['current', 'second', 'third']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['current', 'second', 'third']
+  );
   assert.equal(room.updatedAt, 2);
 });
 
@@ -140,37 +138,34 @@ test('shufflePlaylist preserves now playing and prioritized songs before shuffle
   const result = shufflePlaylist(room, { random: () => 0, now: 2 });
 
   assert.equal(result.changed, true);
-  assert.deepEqual(room.songs.map(song => song.id), ['current', 'priority', 'second', 'first']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['current', 'priority', 'second', 'first']
+  );
   assert.equal(room.historyStack.length, 1);
   assert.equal(room.updatedAt, 2);
 });
 
 test('shufflePlaylist protects songs marked by prioritizeSong', () => {
   const room = createRoom({
-    songs: [
-      createSong('current'),
-      createSong('first'),
-      createSong('second'),
-      createSong('third'),
-      createSong('fourth')
-    ]
+    songs: [createSong('current'), createSong('first'), createSong('second'), createSong('third'), createSong('fourth')]
   });
 
   prioritizeSong(room, 'third', 2);
   const result = shufflePlaylist(room, { random: () => 0, now: 3 });
 
   assert.equal(result.changed, true);
-  assert.deepEqual(room.songs.map(song => song.id), ['current', 'third', 'second', 'fourth', 'first']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['current', 'third', 'second', 'fourth', 'first']
+  );
   assert.equal(room.songs[1].prioritized, true);
   assert.equal(room.updatedAt, 3);
 });
 
 test('advanceQueue moves current song to sung history and initializes reactions', () => {
   const room = createRoom({
-    songs: [
-      createSong('current', 'Alice', { reactions: undefined }),
-      createSong('next', 'Bob')
-    ]
+    songs: [createSong('current', 'Alice', { reactions: undefined }), createSong('next', 'Bob')]
   });
 
   const result = advanceQueue(room, aliceUser, 100);
@@ -179,8 +174,14 @@ test('advanceQueue moves current song to sung history and initializes reactions'
   assert.equal(result.song.id, 'current');
   assert.equal(result.song.completedAt, 100);
   assert.deepEqual(result.song.reactions, createReactions());
-  assert.deepEqual(room.songs.map(song => song.id), ['next']);
-  assert.deepEqual(room.alreadySung.map(song => song.id), ['current']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['next']
+  );
+  assert.deepEqual(
+    room.alreadySung.map((song) => song.id),
+    ['current']
+  );
   assert.equal(room.updatedAt, 100);
 });
 
@@ -199,8 +200,14 @@ test('restorePreviousSong moves latest sung song back and resets reactions', () 
   assert.equal(result.changed, true);
   assert.equal(result.song.id, 'previous');
   assert.deepEqual(result.song.reactions, createReactions());
-  assert.deepEqual(room.songs.map(song => song.id), ['previous']);
-  assert.deepEqual(room.alreadySung.map(song => song.id), ['old']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['previous']
+  );
+  assert.deepEqual(
+    room.alreadySung.map((song) => song.id),
+    ['old']
+  );
   assert.equal(room.updatedAt, 200);
 });
 
@@ -215,13 +222,19 @@ test('undoPlaylist and redoPlaylist mutate queue and history for admins', () => 
   const undoResult = undoPlaylist(room, hostUser, 300);
 
   assert.equal(undoResult.changed, true);
-  assert.deepEqual(room.songs.map(song => song.id), ['one']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['one']
+  );
   assert.equal(room.updatedAt, 300);
 
   const redoResult = redoPlaylist(room, hostUser, 400);
 
   assert.equal(redoResult.changed, true);
-  assert.deepEqual(room.songs.map(song => song.id), ['one', 'two']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['one', 'two']
+  );
   assert.equal(room.updatedAt, 400);
 });
 
@@ -293,9 +306,7 @@ test('endSession clears queue, sung history, and undo stacks', () => {
 
 test('addReaction initializes missing reaction state and increments counters', () => {
   const room = createRoom({
-    songs: [
-      createSong('current', 'Alice', { reactions: undefined })
-    ]
+    songs: [createSong('current', 'Alice', { reactions: undefined })]
   });
 
   const firstResult = addReaction(room, 'rose');
@@ -313,9 +324,7 @@ test('addReaction initializes missing reaction state and increments counters', (
 
 test('addReaction ignores unknown reaction types without changing state', () => {
   const room = createRoom({
-    songs: [
-      createSong('current', 'Alice', { reactions: createReactions() })
-    ]
+    songs: [createSong('current', 'Alice', { reactions: createReactions() })]
   });
   const originalReactions = { ...room.songs[0].reactions };
 

@@ -24,10 +24,14 @@ export function createAvatarElement(avatarData, className = '') {
       attributes: { src: imageSrc },
       style: 'width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;'
     });
-    img.addEventListener('error', () => {
-      const fallback = createAvatarElement('🎤', className);
-      img.replaceWith(fallback);
-    }, { once: true });
+    img.addEventListener(
+      'error',
+      () => {
+        const fallback = createAvatarElement('🎤', className);
+        img.replaceWith(fallback);
+      },
+      { once: true }
+    );
     return img;
   }
 
@@ -49,9 +53,9 @@ export function resizeAndSetAvatar(file, callback) {
   }
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const img = new Image();
-    img.onload = function() {
+    img.onload = function () {
       const canvas = document.createElement('canvas');
       const size = 128;
       canvas.width = size;
@@ -80,7 +84,7 @@ export function renderEmojiGrid(containerId, emojis, onSelectCallback, selectedE
 
   clearChildren(grid);
 
-  emojis.forEach(emoji => {
+  emojis.forEach((emoji) => {
     const cell = document.createElement('button');
     cell.type = 'button';
     cell.className = 'avatar-option';
@@ -90,7 +94,7 @@ export function renderEmojiGrid(containerId, emojis, onSelectCallback, selectedE
     cell.textContent = emoji;
     cell.addEventListener('click', () => {
       const parent = cell.parentElement;
-      parent.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+      parent.querySelectorAll('.avatar-option').forEach((opt) => opt.classList.remove('selected'));
       cell.classList.add('selected');
       onSelectCallback(emoji);
     });

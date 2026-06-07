@@ -5,11 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 
 import { registerSocketHandlers } from './socket-handlers.js';
-import {
-  loadRooms,
-  resolveDatabaseFile,
-  saveRooms as saveRoomsToFile
-} from './storage.js';
+import { loadRooms, resolveDatabaseFile, saveRooms as saveRoomsToFile } from './storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const srcDir = path.dirname(__filename);
@@ -73,11 +69,11 @@ export function createShareQServer(options = {}) {
       clearInterval(saveInterval);
     }
 
-    await new Promise(resolve => io.close(resolve));
+    await new Promise((resolve) => io.close(resolve));
 
     if (httpServer.listening) {
       await new Promise((resolve, reject) => {
-        httpServer.close(err => {
+        httpServer.close((err) => {
           if (err) {
             reject(err);
             return;

@@ -29,19 +29,11 @@ const browserGlobals = {
 
 export default [
   {
-    ignores: [
-      'data/**',
-      'node_modules/**'
-    ]
+    ignores: ['data/**', 'node_modules/**']
   },
   js.configs.recommended,
   {
-    files: [
-      'server.js',
-      'scripts/**/*.js',
-      'src/**/*.js',
-      'test/**/*.js'
-    ],
+    files: ['server.js', 'scripts/**/*.js', 'src/**/*.js', 'test/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -49,19 +41,19 @@ export default [
     },
     rules: {
       'no-console': 'off',
-      'no-unused-vars': ['warn', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
-      }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ],
       quotes: ['error', 'single', { avoidEscape: true }],
       semi: ['error', 'always']
     }
   },
   {
-    files: [
-      'public/app.js',
-      'public/js/**/*.js'
-    ],
+    files: ['public/app.js', 'public/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -69,10 +61,13 @@ export default [
     },
     rules: {
       'no-console': 'off',
-      'no-unused-vars': ['warn', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
-      }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ],
       semi: ['error', 'always']
     }
   }

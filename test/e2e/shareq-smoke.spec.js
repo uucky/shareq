@@ -13,7 +13,7 @@ const silentLogger = {
 };
 
 function listen(server) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => resolve(server.address().port));
   });
 }
@@ -49,13 +49,7 @@ function createUserId(offset) {
 }
 
 function contextOptionsForProject(projectUse) {
-  const contextKeys = [
-    'viewport',
-    'deviceScaleFactor',
-    'isMobile',
-    'hasTouch',
-    'userAgent'
-  ];
+  const contextKeys = ['viewport', 'deviceScaleFactor', 'isMobile', 'hasTouch', 'userAgent'];
   const options = {};
 
   for (const key of contextKeys) {
@@ -82,9 +76,7 @@ async function openSeededPage(page, { origin, userId }) {
 }
 
 async function createAdditionalUserPage(browser, testInfo, { userId }) {
-  const context = await browser.newContext(
-    contextOptionsForProject(testInfo.project.use)
-  );
+  const context = await browser.newContext(contextOptionsForProject(testInfo.project.use));
   await context.addInitScript(seedUserStorage, { userId });
 
   return {
@@ -108,11 +100,11 @@ async function closeContexts(contexts) {
 function watchPageProblems(page) {
   const problems = [];
 
-  page.on('pageerror', error => {
+  page.on('pageerror', (error) => {
     problems.push(`pageerror: ${error.message}`);
   });
 
-  page.on('console', message => {
+  page.on('console', (message) => {
     if (message.type() !== 'error') {
       return;
     }
@@ -168,12 +160,7 @@ async function createHostRoom(page, { origin, username, userId }) {
   return createRoom(page);
 }
 
-async function joinAdditionalUser(browser, testInfo, {
-  origin,
-  roomId,
-  username,
-  userId
-}) {
+async function joinAdditionalUser(browser, testInfo, { origin, roomId, username, userId }) {
   const { context, page } = await createAdditionalUserPage(browser, testInfo, {
     userId
   });

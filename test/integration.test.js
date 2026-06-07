@@ -7,13 +7,7 @@ import { clearTimeout, setTimeout } from 'node:timers';
 import { io as createClient } from 'socket.io-client';
 
 import { createShareQServer } from '../src/app.js';
-import {
-  createReactions,
-  getOrCreateRoom,
-  pushHistory,
-  redoAction,
-  undoAction
-} from '../src/rooms.js';
+import { createReactions, getOrCreateRoom, pushHistory, redoAction, undoAction } from '../src/rooms.js';
 import { createSaveData, loadRooms } from '../src/storage.js';
 
 const silentLogger = {
@@ -22,7 +16,7 @@ const silentLogger = {
 };
 
 function listen(server) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => resolve(server.address().port));
   });
 }
@@ -270,7 +264,7 @@ test('socket save failures emit an error without rolling back in-memory changes'
     const errorPromise = waitForSocketMatching(
       client,
       'system-message',
-      message => message.type === 'error' && message.text.includes('保存失败')
+      (message) => message.type === 'error' && message.text.includes('保存失败')
     );
     client.emit('add-song', {
       title: '七里香',
@@ -436,10 +430,7 @@ test('users cannot delete songs requested by someone else', async () => {
       link: ''
     });
 
-    const [playlist] = await Promise.all([
-      alicePlaylistPromise,
-      bobPlaylistPromise
-    ]);
+    const [playlist] = await Promise.all([alicePlaylistPromise, bobPlaylistPromise]);
     const songId = playlist[0].id;
 
     const errorPromise = waitForSocket(bob, 'system-message');
@@ -482,10 +473,7 @@ test('host can delete songs requested by another user', async () => {
       link: ''
     });
 
-    const [playlist] = await Promise.all([
-      hostPlaylistPromise,
-      guestPlaylistPromise
-    ]);
+    const [playlist] = await Promise.all([hostPlaylistPromise, guestPlaylistPromise]);
     const songId = playlist[0].id;
 
     const deletePromise = waitForSocket(guest, 'playlist-updated');
@@ -535,10 +523,7 @@ test('moderators can advance the queue after host promotion', async () => {
       singer: '',
       link: ''
     });
-    const [playlist] = await Promise.all([
-      hostPlaylistPromise,
-      modPlaylistPromise
-    ]);
+    const [playlist] = await Promise.all([hostPlaylistPromise, modPlaylistPromise]);
 
     const historyPromise = waitForSocket(host, 'history-updated');
     moderator.emit('next-song');
@@ -594,9 +579,15 @@ test('playlist history supports undo and redo', () => {
   });
 
   assert.equal(undoAction(room), true);
-  assert.deepEqual(room.songs.map(song => song.id), ['song-1']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['song-1']
+  );
   assert.equal(redoAction(room), true);
-  assert.deepEqual(room.songs.map(song => song.id), ['song-1', 'song-2']);
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['song-1', 'song-2']
+  );
 });
 
 test('storage cleanup removes only old empty rooms', () => {
@@ -604,26 +595,29 @@ test('storage cleanup removes only old empty rooms', () => {
   const old = now - 49 * 60 * 60 * 1000;
   const recent = now - 1 * 60 * 60 * 1000;
 
-  const { cleanSaveData, cleanedCount } = createSaveData({
-    OLD_EMPTY: {
-      id: 'OLD_EMPTY',
-      songs: [],
-      alreadySung: [],
-      updatedAt: old
+  const { cleanSaveData, cleanedCount } = createSaveData(
+    {
+      OLD_EMPTY: {
+        id: 'OLD_EMPTY',
+        songs: [],
+        alreadySung: [],
+        updatedAt: old
+      },
+      RECENT_EMPTY: {
+        id: 'RECENT_EMPTY',
+        songs: [],
+        alreadySung: [],
+        updatedAt: recent
+      },
+      OLD_ACTIVE: {
+        id: 'OLD_ACTIVE',
+        songs: [{ id: 'song-1', title: 'Still Here' }],
+        alreadySung: [],
+        updatedAt: old
+      }
     },
-    RECENT_EMPTY: {
-      id: 'RECENT_EMPTY',
-      songs: [],
-      alreadySung: [],
-      updatedAt: recent
-    },
-    OLD_ACTIVE: {
-      id: 'OLD_ACTIVE',
-      songs: [{ id: 'song-1', title: 'Still Here' }],
-      alreadySung: [],
-      updatedAt: old
-    }
-  }, now);
+    now
+  );
 
   assert.equal(cleanedCount, 1);
   assert.deepEqual(Object.keys(cleanSaveData).sort(), ['OLD_ACTIVE', 'RECENT_EMPTY']);

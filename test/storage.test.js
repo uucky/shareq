@@ -154,26 +154,34 @@ test('SQLite storage cleanup removes only old empty rooms', () => {
   const recent = now - 1 * 60 * 60 * 1000;
 
   try {
-    assert.equal(saveRooms({
-      OLD_EMPTY: {
-        id: 'OLD_EMPTY',
-        songs: [],
-        alreadySung: [],
-        updatedAt: old
-      },
-      RECENT_EMPTY: {
-        id: 'RECENT_EMPTY',
-        songs: [],
-        alreadySung: [],
-        updatedAt: recent
-      },
-      OLD_ACTIVE: {
-        id: 'OLD_ACTIVE',
-        songs: [createSong('song-1')],
-        alreadySung: [],
-        updatedAt: old
-      }
-    }, databaseFile, silentLogger, now), true);
+    assert.equal(
+      saveRooms(
+        {
+          OLD_EMPTY: {
+            id: 'OLD_EMPTY',
+            songs: [],
+            alreadySung: [],
+            updatedAt: old
+          },
+          RECENT_EMPTY: {
+            id: 'RECENT_EMPTY',
+            songs: [],
+            alreadySung: [],
+            updatedAt: recent
+          },
+          OLD_ACTIVE: {
+            id: 'OLD_ACTIVE',
+            songs: [createSong('song-1')],
+            alreadySung: [],
+            updatedAt: old
+          }
+        },
+        databaseFile,
+        silentLogger,
+        now
+      ),
+      true
+    );
 
     assert.deepEqual(Object.keys(loadRooms(databaseFile, silentLogger)).sort(), ['OLD_ACTIVE', 'RECENT_EMPTY']);
   } finally {
@@ -187,16 +195,20 @@ test('JSON to SQLite migration imports rooms and refuses accidental overwrite', 
   const databaseFile = path.join(tmpDir, 'shareq.sqlite');
 
   try {
-    fs.writeFileSync(jsonFile, JSON.stringify({
-      MIGR8: {
-        id: 'MIGR8',
-        songs: [createSong('song-1', { title: 'Migrated Song' })],
-        alreadySung: [],
-        hostUserId: 'host-user',
-        moderatorUserIds: ['mod-user'],
-        updatedAt: 123
-      }
-    }), 'utf8');
+    fs.writeFileSync(
+      jsonFile,
+      JSON.stringify({
+        MIGR8: {
+          id: 'MIGR8',
+          songs: [createSong('song-1', { title: 'Migrated Song' })],
+          alreadySung: [],
+          hostUserId: 'host-user',
+          moderatorUserIds: ['mod-user'],
+          updatedAt: 123
+        }
+      }),
+      'utf8'
+    );
 
     migrateRoomsJsonToSqlite(jsonFile, databaseFile, { logger: silentLogger });
 
@@ -205,19 +217,20 @@ test('JSON to SQLite migration imports rooms and refuses accidental overwrite', 
     assert.equal(migratedRooms.MIGR8.hostUserId, 'host-user');
     assert.deepEqual(migratedRooms.MIGR8.moderatorUserIds, ['mod-user']);
 
-    assert.throws(
-      () => migrateRoomsJsonToSqlite(jsonFile, databaseFile, { logger: silentLogger }),
-      /already exists/
-    );
+    assert.throws(() => migrateRoomsJsonToSqlite(jsonFile, databaseFile, { logger: silentLogger }), /already exists/);
 
-    fs.writeFileSync(jsonFile, JSON.stringify({
-      FORCE: {
-        id: 'FORCE',
-        songs: [createSong('song-2', { title: 'Forced Song' })],
-        alreadySung: [],
-        updatedAt: 456
-      }
-    }), 'utf8');
+    fs.writeFileSync(
+      jsonFile,
+      JSON.stringify({
+        FORCE: {
+          id: 'FORCE',
+          songs: [createSong('song-2', { title: 'Forced Song' })],
+          alreadySung: [],
+          updatedAt: 456
+        }
+      }),
+      'utf8'
+    );
 
     migrateRoomsJsonToSqlite(jsonFile, databaseFile, { force: true, logger: silentLogger });
 
