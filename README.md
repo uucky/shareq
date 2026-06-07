@@ -72,7 +72,7 @@
 
 ### 环境要求
 
-- [Node.js](https://nodejs.org/) >= 18
+- [Node.js](https://nodejs.org/) >= 24
 
 ### 安装与运行
 
@@ -85,7 +85,7 @@ cd shareq
 npm install
 
 # 启动服务器
-node server.js
+npm start
 ```
 
 服务启动后访问 **http://localhost:3000** 即可使用。
@@ -116,12 +116,17 @@ docker compose up -d --build
 
 ```
 shareq/
-├── server.js          # Express + Socket.IO 服务端
+├── server.js          # 服务端启动入口
+├── src/
+│   ├── app.js         # Express + Socket.IO 应用工厂
+│   ├── rooms.js       # 房间、歌单、权限与撤销/重做逻辑
+│   └── storage.js     # JSON 数据加载、保存与过期清理
 ├── public/
 │   ├── index.html     # 单页应用 HTML 结构
 │   ├── app.js         # 客户端逻辑 (WebSocket, DOM, Web Audio)
 │   └── style.css      # 全局样式 (CSS 变量, 亮/暗主题)
 ├── data/              # 房间数据持久化存储
+├── test/              # Node.js 原生测试
 ├── changelog.md       # 更新日志
 └── package.json
 ```
@@ -130,6 +135,15 @@ shareq/
 - **数据持久化**: 房间数据以 JSON 形式存储在 `data/` 目录，服务重启后自动恢复
 - **零依赖前端**: 纯 HTML + CSS + Vanilla JS，无需构建工具
 - **音效合成**: Web Audio API 实时合成互动音效，无需加载音频文件
+
+### 维护命令
+
+```bash
+npm run lint
+npm test
+```
+
+测试会启动临时本地端口并使用临时数据文件，不会写入 `data/rooms.json`。
 
 ---
 

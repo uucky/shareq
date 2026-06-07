@@ -217,17 +217,6 @@ let lastSingingSongId = "";
 
 // Initialize Elements
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Rename tabs
-  const tabUp = document.getElementById("tab-upcoming-btn");
-  if(tabUp) tabUp.innerHTML = '<i class="fa-solid fa-list-ul"></i> 已点 <span id="song-count-badge" class="counter-badge">0 首</span>';
-  const tabHist = document.getElementById("tab-history-btn");
-  if(tabHist) tabHist.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> 已唱 <span id="history-count-badge" class="counter-badge">0 首</span>';
-
-  // 2. Dev badge
-  const brandTitle = document.querySelector(".brand-title");
-  if(brandTitle) brandTitle.innerHTML = 'ShareQ <span style="font-size: 0.4em; opacity: 0.5; font-weight: normal; vertical-align: middle;">测试服</span>';
-
-  // DOM injection code removed as changes are now in index.html
   updateMessagesEmptyState();
 
   // Generate or Load Persistent User ID (6-digit numeric ID)
@@ -1342,6 +1331,21 @@ function updateNowPlaying() {
   const singerElem = document.getElementById("playing-singer");
   const userElem = document.getElementById("playing-user-badge");
   const linkBtn = document.getElementById("playing-link-btn");
+  const updateReactionCounts = (reacts) => {
+    const countMap = {
+      "count-rose": reacts.rose || 0,
+      "count-clap": reacts.clap || 0,
+      "count-egg": reacts.egg || 0,
+      "count-shoe": reacts.shoe || 0
+    };
+
+    for (const [id, value] of Object.entries(countMap)) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.textContent = value;
+      }
+    }
+  };
   
   if (playlist.length > 0) {
     const currentSong = playlist[0];
@@ -1369,10 +1373,7 @@ function updateNowPlaying() {
 
     // Reactions counter
     const reacts = currentSong.reactions || { rose: 0, clap: 0, egg: 0, shoe: 0 };
-    document.getElementById("count-rose").textContent = reacts.rose || 0;
-    document.getElementById("count-clap").textContent = reacts.clap || 0;
-    document.getElementById("count-egg").textContent = reacts.egg || 0;
-    document.getElementById("count-shoe").textContent = reacts.shoe || 0;
+    updateReactionCounts(reacts);
 
     // Show visualizer bars and spinning CD animation
     document.getElementById("visualizer-bars").style.opacity = "1";
@@ -1411,13 +1412,13 @@ function updateNowPlaying() {
       dedicateBadge.classList.add("hidden");
     }
 
-    document.getElementById("count-rose").textContent = 0;
-    document.getElementById("count-clap").textContent = 0;
-    document.getElementById("count-egg").textContent = 0;
-    document.getElementById("count-shoe").textContent = 0;
+    updateReactionCounts({ rose: 0, clap: 0, egg: 0, shoe: 0 });
 
     document.getElementById("visualizer-bars").style.opacity = "0.2";
-    document.querySelector(".playing-music-note-large i").style.animationPlayState = "paused";
+    const musicNote = document.querySelector(".playing-music-note-large i");
+    if (musicNote) {
+      musicNote.style.animationPlayState = "paused";
+    }
   }
 }
 
