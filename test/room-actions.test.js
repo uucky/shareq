@@ -104,7 +104,26 @@ test('prioritizeSong moves a queued song directly after now playing', () => {
 
   assert.equal(result.changed, true);
   assert.equal(result.song.id, 'third');
+  assert.equal(result.song.prioritized, true);
   assert.deepEqual(room.songs.map(song => song.id), ['current', 'third', 'second']);
+  assert.equal(room.updatedAt, 2);
+});
+
+test('prioritizeSong marks the second queued song as prioritized without moving it', () => {
+  const room = createRoom({
+    songs: [
+      createSong('current'),
+      createSong('second'),
+      createSong('third')
+    ]
+  });
+
+  const result = prioritizeSong(room, 'second', 2);
+
+  assert.equal(result.changed, true);
+  assert.equal(result.song.id, 'second');
+  assert.equal(result.song.prioritized, true);
+  assert.deepEqual(room.songs.map(song => song.id), ['current', 'second', 'third']);
   assert.equal(room.updatedAt, 2);
 });
 
@@ -124,6 +143,26 @@ test('shufflePlaylist preserves now playing and prioritized songs before shuffle
   assert.deepEqual(room.songs.map(song => song.id), ['current', 'priority', 'second', 'first']);
   assert.equal(room.historyStack.length, 1);
   assert.equal(room.updatedAt, 2);
+});
+
+test('shufflePlaylist protects songs marked by prioritizeSong', () => {
+  const room = createRoom({
+    songs: [
+      createSong('current'),
+      createSong('first'),
+      createSong('second'),
+      createSong('third'),
+      createSong('fourth')
+    ]
+  });
+
+  prioritizeSong(room, 'third', 2);
+  const result = shufflePlaylist(room, { random: () => 0, now: 3 });
+
+  assert.equal(result.changed, true);
+  assert.deepEqual(room.songs.map(song => song.id), ['current', 'third', 'second', 'fourth', 'first']);
+  assert.equal(room.songs[1].prioritized, true);
+  assert.equal(room.updatedAt, 3);
 });
 
 test('advanceQueue moves current song to sung history and initializes reactions', () => {

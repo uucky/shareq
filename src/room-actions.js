@@ -51,6 +51,7 @@ export function prioritizeSong(room, songId, now = Date.now()) {
 
   pushHistory(room);
   const song = room.songs[songIndex];
+  song.prioritized = true;
 
   if (songIndex > 1) {
     const [movedSong] = room.songs.splice(songIndex, 1);
