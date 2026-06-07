@@ -107,11 +107,9 @@ npm version "$release_arg" --no-git-tag-version --allow-same-version --ignore-sc
 version="$(version_from_package "$repo_root/package.json")"
 [[ "$version" == "$target_version" ]] || die "expected version $target_version, got $version"
 
-node scripts/sync-client-version.js
-
 tag="v$version"
 
-git add package.json package-lock.json client/index.html
+git add package.json package-lock.json
 if git diff --cached --quiet; then
     echo "Version is already $version; no release commit created."
 else

@@ -27,6 +27,12 @@ const browserGlobals = {
   window: 'readonly'
 };
 
+const buildGlobals = {
+  __APP_COMMIT__: 'readonly',
+  __APP_COMMIT_FULL__: 'readonly',
+  __APP_VERSION__: 'readonly'
+};
+
 export default [
   {
     ignores: ['data/**', 'dist/**', 'node_modules/**']
@@ -57,7 +63,10 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: browserGlobals
+      globals: {
+        ...browserGlobals,
+        ...buildGlobals
+      }
     },
     rules: {
       'no-console': 'off',

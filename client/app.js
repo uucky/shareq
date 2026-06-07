@@ -18,6 +18,7 @@ import { setupEventListeners } from './js/events.js';
 
 // Initialize Elements
 document.addEventListener('DOMContentLoaded', () => {
+  renderAppVersion();
   updateMessagesEmptyState();
 
   // Generate or Load Persistent User ID (6-digit numeric ID)
@@ -119,6 +120,17 @@ document.addEventListener('DOMContentLoaded', () => {
     updateWidgetUI
   });
 });
+
+function renderAppVersion() {
+  const versionElement = document.getElementById('app-version');
+  if (!versionElement) {
+    return;
+  }
+
+  const versionText = `v${__APP_VERSION__} (${__APP_COMMIT__})`;
+  versionElement.textContent = versionText;
+  versionElement.title = `v${__APP_VERSION__} (${__APP_COMMIT_FULL__})`;
+}
 
 // Logic: Handle User Login Join / Creation Action
 function handleLoginJoin(mode) {

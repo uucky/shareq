@@ -1,5 +1,8 @@
 FROM node:24-alpine AS build
 
+ARG APP_COMMIT=unknown
+ENV APP_COMMIT=$APP_COMMIT
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
