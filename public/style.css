@@ -1337,6 +1337,7 @@ body.light-theme .brand-header h1 {
   align-items: center;
   gap: 8px;
   transition: all var(--transition-normal);
+  white-space: nowrap;
 }
 
 .playlist-tab-btn.active {
@@ -1378,6 +1379,7 @@ body.light-theme .brand-header h1 {
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-action:active {
@@ -2372,6 +2374,7 @@ body.light-theme .stats-name {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 .toast-filter-btn:hover:not(.active) {
   background: rgba(255, 255, 255, 0.1);

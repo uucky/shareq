@@ -350,8 +350,8 @@
                 <button type="button" id="shuffle-btn" class="btn-action btn-action-orange" title="打乱所有未优先歌曲的顺序">
                   <i class="fa-solid fa-shuffle"></i> 打乱歌单
                 </button>
-                <button type="button" id="next-btn" class="btn-action btn-action-purple hidden" title="切歌 / 播放下一首 (仅主持人/房管)">
-                  <i class="fa-solid fa-forward-step"></i> 切歌 / 下一首
+                <button type="button" id="next-btn" class="btn-action btn-action-purple hidden" title="切歌 (仅主持人/房管)">
+                  <i class="fa-solid fa-forward-step"></i> 切歌
                 </button>
               </div>
             </div>
@@ -368,6 +368,9 @@
             <div class="playlist-container hidden" id="stats-playlist-container">
               <!-- Populated by JavaScript for statistics dashboard -->
             </div>
+          </div> <!-- Close playlist-card -->
+        </section> <!-- Close playlist-section -->
+
         <!-- THIRD COLUMN: SYSTEM MESSAGES / NOTIFICATIONS -->
         <section class="grid-col notifications-section">
           <div id="toast-history-panel" class="glass-card">

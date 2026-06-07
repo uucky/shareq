@@ -4,6 +4,9 @@
 ### Refactored & Optimized on Dev
 - **Twitch-Style Activity Chat Stream**: Redesigned the third column notification panel to render as a Twitch-style chat feed. Older items are printed at the top, and new items append to the bottom with an automatic scroll-to-bottom. Replaced the system notification popups from floating over the playlist (only direct dedications still float as popups).
 - **Single-Row Playlist Item Layout**: Refactored the song list cards for both upcoming songs and historical list so that "Title", "Singer", and "Requester/dedication info" are layed out inline in a single flex row separated by a dot (`•`), instead of stacking vertically across three separate lines.
+- **3-Column Nesting Layout Fix**: Corrected missing closing tags (`</div>` and `</section>`) for the playlist container card in `public/index.html`. This correctly snaps the Activity section to the independent third column on the right side rather than overlapping or stacking below the playlist queue.
+- **Button Word-Wrapping Prevention**: Added `white-space: nowrap` rules to `.playlist-tab-btn`, `.btn-action`, and `.toast-filter-btn` to prevent critical terms like "待播歌单" from wrapping characters on narrower viewport widths.
+- **Next Button Label Simplification**: Renamed the moderator control button label from "切歌 / 下一首" to "切歌".
 
 ## [2026-06-06 22:30:00]
 ### Refactored & Optimized on Dev
