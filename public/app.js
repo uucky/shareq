@@ -1357,7 +1357,6 @@ function updateNowPlaying() {
       } else {
         avatarDisc.classList.add("hidden");
         noteIcon.classList.remove("hidden");
-        noteIcon.className = "playing-music-note-large pulse-glow fa-spin";
         noteIcon.innerHTML = currentSong.requestedByAvatar || "🎤";
       }
     }

@@ -277,10 +277,10 @@
             </div>
             
             <div class="playing-content-wrapper" id="now-playing-content" style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; width:100%; padding: 10px 0;">
-              <!-- Left side: Disc -->
-              <div class="playing-icon-wrapper" style="position:relative; width: 110px; height: 110px; flex-shrink:0;">
-                <i id="playing-music-note" class="fa-solid fa-compact-disc playing-music-note-large pulse-glow fa-spin" style="position:absolute; inset:0; font-size:110px; color:var(--color-primary); line-height: 110px;"></i>
-                <img id="playing-avatar-disc" src="" class="playing-avatar-disc hidden" style="position:absolute; top:27px; left:27px; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-secondary); animation: spin 4s linear infinite; z-index: 2;">
+              <!-- Left side: Avatar -->
+              <div class="playing-icon-wrapper" style="position:relative; width: 110px; height: 110px; flex-shrink:0; display:flex; justify-content:center; align-items:center;">
+                <div id="playing-music-note" class="pulse-glow" style="font-size:80px; animation: spin 8s linear infinite; display:flex; justify-content:center; align-items:center; width:100%; height:100%;">🎤</div>
+                <img id="playing-avatar-disc" src="" class="playing-avatar-disc hidden" style="position:absolute; inset:0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-primary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); animation: spin 8s linear infinite;">
               </div>
               
               <!-- Center side: Details -->
