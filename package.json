@@ -9,7 +9,9 @@
     "format:check": "prettier --check public/index.html",
     "lint": "eslint server.js index.js scripts src test public/app.js public/js",
     "start": "node server.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "test:e2e": "playwright test",
+    "verify": "npm run lint && npm run check:ids && npm test && npm run test:e2e"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
     "eslint": "^10.4.1",
     "prettier": "^3.8.3",
     "socket.io-client": "^4.8.3"
