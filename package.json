@@ -9,7 +9,7 @@
     "format:check": "prettier --check public/index.html",
     "lint": "eslint server.js index.js scripts src test public/app.js public/js",
     "start": "node server.js",
-    "test": "node --test test/integration.test.js"
+    "test": "node --test test/*.test.js"
   },
   "keywords": [],
   "author": "",
