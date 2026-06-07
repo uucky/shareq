@@ -697,11 +697,6 @@ body.light-theme .brand-header h1 {
   margin-left: 0;
 }
 
-.online-avatar:hover {
-  transform: translateY(-4px) scale(1.1);
-  z-index: 10;
-}
-
 .online-count {
   font-size: 0.78rem;
   color: var(--text-secondary);
@@ -2731,3 +2726,31 @@ body.compact-mode .history-toast-item {
   margin-bottom: 6px !important;
 }
 
+@keyframes slideInTopAnim {
+  0% { transform: translateY(-30px); opacity: 0; background: rgba(245, 158, 11, 0.3); }
+  100% { transform: translateY(0); opacity: 1; background: var(--card-bg); }
+}
+.slide-in-top-anim {
+  animation: slideInTopAnim 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.toast-filter-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  transition: all 0.2s;
+}
+.toast-filter-link:hover {
+  color: var(--text-primary);
+}
+.toast-filter-link.active {
+  color: var(--color-primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-primary);
+}
+.plain-list {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}

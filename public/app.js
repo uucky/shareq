@@ -217,6 +217,69 @@ let lastSingingSongId = "";
 
 // Initialize Elements
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Rename tabs
+  const tabUp = document.getElementById("tab-upcoming-btn");
+  if(tabUp) tabUp.innerHTML = '<i class="fa-solid fa-list-ul"></i> 已点 <span id="song-count-badge" class="counter-badge">0 首</span>';
+  const tabHist = document.getElementById("tab-history-btn");
+  if(tabHist) tabHist.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> 已唱 <span id="history-count-badge" class="counter-badge">0 首</span>';
+
+  // 2. Dev badge
+  const brandTitle = document.querySelector(".brand-title");
+  if(brandTitle) brandTitle.innerHTML = 'ShareQ <span style="font-size: 0.4em; opacity: 0.5; font-weight: normal; vertical-align: middle;">测试服</span>';
+
+  // 3. Setup Messages panel
+  const notifSection = document.querySelector(".notifications-section");
+  if(notifSection) {
+    const messagesPanel = document.createElement("div");
+    messagesPanel.id = "messages-panel";
+    messagesPanel.className = "glass-card";
+    messagesPanel.style.padding = "16px";
+    messagesPanel.style.marginBottom = "16px";
+    messagesPanel.innerHTML = `
+      <div class="card-header" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-size:1.1rem;"><i class="fa-solid fa-envelope"></i> 消息</h2>
+        <span id="pending-dedications-badge" class="history-badge hidden">0</span>
+      </div>
+      <div id="pending-dedications-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+    `;
+    notifSection.insertBefore(messagesPanel, notifSection.firstChild);
+
+    const toastPanelHeader = document.querySelector("#toast-history-panel .card-header h2");
+    if(toastPanelHeader) toastPanelHeader.innerHTML = '动态';
+
+    const otherFilter = document.querySelector('.toast-filter-btn[data-filter="other"]');
+    if(otherFilter) otherFilter.remove();
+  }
+
+  // 4. Reorganize Now Playing Card
+  const nowPlayingPanel = document.getElementById("now-playing-panel");
+  if(nowPlayingPanel) {
+    nowPlayingPanel.innerHTML = `
+      <div class="playing-header" style="justify-content: flex-end;">
+        <a href="#" target="_blank" id="playing-link-btn" class="accompaniment-btn hidden" title="打开点歌人提供的伴奏链接">
+          <i class="fa-solid fa-up-right-from-square"></i> 打开伴奏链接
+        </a>
+      </div>
+      <div class="playing-content" style="flex-direction: column; align-items: center; text-align: center; gap: 16px; margin-top: -10px;">
+        <div class="playing-icon-wrapper" style="margin-bottom: 8px;">
+          <i id="playing-music-note" class="fa-solid fa-compact-disc playing-music-note-large pulse-glow fa-spin"></i>
+          <img id="playing-avatar-disc" src="" class="playing-avatar-disc hidden" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-secondary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); animation: spin 4s linear infinite;">
+        </div>
+        <div class="playing-details" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+          <div class="playing-label" style="margin-bottom: 8px; align-self: center;">
+            <span class="indicator-dot blinking"></span> 正在演唱
+          </div>
+          <h2 id="playing-title" class="playing-title-large" style="font-size: 2.2rem; margin-bottom: 4px;">等待点歌...</h2>
+          <p id="playing-singer" class="playing-singer-large" style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 12px;">--</p>
+          <div class="playing-requester" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span class="badge badge-user" id="playing-user" style="font-size:0.9rem;">--</span>
+            <span id="playing-dedicate-badge" class="badge dedicate-tag hidden" style="font-size:0.8rem;"></span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // Generate or Load Persistent User ID (6-digit numeric ID)
   currentUserId = localStorage.getItem("shareq_userid");
   if (!currentUserId) {
@@ -238,8 +301,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialize Socket.io
   socket = io();
 
+  socket.on("connect", () => {
+    const lastRoom = localStorage.getItem("shareq_last_room");
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRoom = urlParams.get("room");
+    if (lastRoom && (!urlRoom || urlRoom === lastRoom) && currentUsername) {
+      socket.emit("join-room", {
+        roomId: lastRoom,
+        username: currentUsername,
+        avatar: currentAvatar,
+        userId: currentUserId
+      });
+    }
+  });
+
+  socket.on("error", (msg) => {
+    if(msg && msg.includes("不存在")) localStorage.removeItem("shareq_last_room");
+  });
+
   // Socket Core Receivers
   socket.on("room-data", (data) => {
+    localStorage.setItem("shareq_last_room", data.roomId);
     currentRoomId = data.roomId;
     playlist = data.songs;
     historyPlaylist = data.alreadySung || [];
@@ -418,13 +500,9 @@ function setupEventListeners() {
   // Leave Room trigger with confirm alert
   document.getElementById("leave-room-btn").addEventListener("click", () => {
     if (confirm("您确定要离开当前 KTV 点歌房返回首页吗？")) {
+      localStorage.removeItem("shareq_last_room");
       window.location.href = window.location.origin + window.location.pathname;
     }
-  });
-
-  // Double click User Count Badge -> Hidden Egg
-  document.getElementById("users-stack-trigger").addEventListener("dblclick", () => {
-    openArchiveModal();
   });
 
   // Click logo -> Tooltip info
@@ -1017,6 +1095,10 @@ function renderPlaylist() {
 
     const row = document.createElement("div");
     row.className = "song-card";
+    if (window.lastPinnedSongId === song.id) {
+      row.classList.add("slide-in-top-anim");
+      window.lastPinnedSongId = null;
+    }
     
     row.innerHTML = `
       <div class="song-index-col">${i}</div>
@@ -1026,7 +1108,7 @@ function renderPlaylist() {
         <span class="song-singer-text">${song.singer || '未知歌手'}</span>
         <span class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
-          <span class="song-requester-name">${song.requestedBy}</span>
+          <span class="song-requester-name">${formatUsername(song.requestedBy)}</span>
           ${song.dedicatedBy ? `<span class="dedicate-tag"><i class="fa-solid fa-gift"></i> ${song.dedicatedBy} 指名</span>` : ''}
           ${song.link ? `<a class="song-accompaniment-link" href="${song.link}" target="_blank" title="伴奏链接"><i class="fa-solid fa-link"></i> 伴奏</a>` : ''}
         </span>
@@ -1045,6 +1127,7 @@ function renderPlaylist() {
 
     // Priority bind
     row.querySelector(".priority-btn").addEventListener("click", () => {
+      window.lastPinnedSongId = song.id;
       socket.emit("prioritize-song", { songId: song.id });
     });
 
@@ -1144,7 +1227,7 @@ function renderHistory() {
         <span class="song-singer-text">${song.singer || '未知歌手'}</span>
         <span class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
-          <span class="song-requester-name">${song.requestedBy}</span>
+          <span class="song-requester-name">${formatUsername(song.requestedBy)}</span>
         </span>
         <span class="history-time" style="margin-left: auto; font-size: 0.78rem; opacity: 0.75;"><i class="fa-solid fa-circle-play"></i> 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}</span>
         <div class="playing-reaction-summary" style="margin-top: 4px; width: 100%;">
@@ -1281,7 +1364,7 @@ function updateNowPlaying() {
     const currentSong = playlist[0];
     titleElem.textContent = currentSong.title;
     singerElem.textContent = currentSong.singer ? `${currentSong.singer}` : "未指定歌手";
-    userElem.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:6px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${currentSong.requestedBy}`;
+    userElem.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; overflow:hidden; vertical-align:middle; margin-right:6px;">${renderAvatarHTML(currentSong.requestedByAvatar)}</span>${formatUsername(currentSong.requestedBy)}`;
     
     const dedicateBadge = document.getElementById("playing-dedicate-badge");
     if (dedicateBadge) {
@@ -1310,7 +1393,20 @@ function updateNowPlaying() {
 
     // Show visualizer bars and spinning CD animation
     document.getElementById("visualizer-bars").style.opacity = "1";
-    document.querySelector(".playing-music-note-large i").style.animationPlayState = "running";
+    const noteIcon = document.getElementById("playing-music-note");
+    const avatarDisc = document.getElementById("playing-avatar-disc");
+    if(noteIcon && avatarDisc) {
+      if (currentSong.requestedByAvatar && currentSong.requestedByAvatar.startsWith("data:image")) {
+        noteIcon.classList.add("hidden");
+        avatarDisc.src = currentSong.requestedByAvatar;
+        avatarDisc.classList.remove("hidden");
+      } else {
+        avatarDisc.classList.add("hidden");
+        noteIcon.classList.remove("hidden");
+        noteIcon.className = "playing-music-note-large pulse-glow fa-spin";
+        noteIcon.innerHTML = currentSong.requestedByAvatar || "🎤";
+      }
+    }
   } else {
     // Empty state
     titleElem.textContent = "暂无演唱歌曲";
@@ -2185,8 +2281,8 @@ function saveRoomToHistory(roomId) {
   // Push new room to the front
   rooms.unshift({ roomId: roomId, joinedAt: Date.now() });
 
-  // Limit list to last 5 rooms
-  rooms = rooms.slice(0, 5);
+  // Limit list to last 10 rooms
+  rooms = rooms.slice(0, 10);
 
   localStorage.setItem("shareq_history_rooms", JSON.stringify(rooms));
 }
@@ -2282,39 +2378,56 @@ function updateDedicateSelect() {
 
 // Show the interactive dedication request modal
 function showDedicationRequestModal(data) {
-  // Add to toast history with type "dedicate" so the unread badge is triggered!
+  // Add to toast history with type "dedicate" so it appears in the activity feed
   showToast("dedicate", `🎁 ${data.fromUsername} 为你指名点播了《${data.title}》`);
 
-  const overlay = document.createElement("div");
-  overlay.className = "singing-turn-overlay dedication-overlay";
-  overlay.id = `dedication-overlay-${data.id}`;
-  overlay.innerHTML = `
-    <div class="singing-turn-card animate-glow" style="border: 2px solid var(--color-secondary); box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);">
-      <div class="singing-icon" style="background: linear-gradient(135deg, #8b5cf6, #ec4899); box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);"><i class="fa-solid fa-gift"></i></div>
-      <h2 style="background: linear-gradient(135deg, #00f0ff, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.8rem; margin: 15px 0 10px;">收到指名点歌！</h2>
-      <p style="font-size: 1.05rem; color: var(--text-primary); font-weight: bold; margin-bottom: 8px;">
-        ${data.fromUsername} 为你点了一首 ${data.singer ? data.singer : '未知歌手'} 的《${data.title}》
-      </p>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.4;">
-        接受后，这首歌将以你的名义加入待播歌单。
-      </p>
-      <div style="display: flex; gap: 12px; justify-content: center; width: 100%;">
-        <button type="button" class="btn btn-primary accept-dedication-btn" style="flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer;">接受</button>
-        <button type="button" class="btn decline-dedication-btn" style="flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">拒绝</button>
-      </div>
+  const list = document.getElementById("pending-dedications-list");
+  if (!list) return;
+
+  const card = document.createElement("div");
+  card.className = "pending-dedication-card animate-glow";
+  card.style = "background: var(--card-bg); border-radius: 8px; padding: 12px; border-left: 4px solid var(--color-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 8px;";
+  card.innerHTML = `
+    <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;">
+      <i class="fa-solid fa-gift" style="color: var(--color-primary);"></i> ${data.fromUsername} 
+      <span style="font-weight: normal; font-size: 0.85rem; color: var(--text-secondary);">为你指名</span>
+    </div>
+    <div style="font-size: 0.9rem; margin-bottom: 12px;">
+      《${data.title}》- ${data.singer || '未知'}
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" class="btn btn-primary accept-dedication-btn" style="flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px;">接受</button>
+      <button type="button" class="btn decline-dedication-btn" style="flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">拒绝</button>
     </div>
   `;
-  document.body.appendChild(overlay);
+  list.appendChild(card);
 
-  overlay.querySelector(".accept-dedication-btn").addEventListener("click", () => {
+  // Update badge count
+  const badge = document.getElementById("pending-dedications-badge");
+  if (badge) {
+    badge.textContent = list.children.length;
+    badge.classList.remove("hidden");
+  }
+
+  card.querySelector(".accept-dedication-btn").addEventListener("click", () => {
     socket.emit("respond-dedication", { id: data.id, accept: true });
-    overlay.classList.add("fade-out");
-    setTimeout(() => overlay.remove(), 400);
+    card.remove();
+    if (badge && list.children.length === 0) badge.classList.add("hidden");
+    else if (badge) badge.textContent = list.children.length;
   });
 
-  overlay.querySelector(".decline-dedication-btn").addEventListener("click", () => {
+  card.querySelector(".decline-dedication-btn").addEventListener("click", () => {
     socket.emit("respond-dedication", { id: data.id, accept: false });
-    overlay.classList.add("fade-out");
-    setTimeout(() => overlay.remove(), 400);
+    card.remove();
+    if (badge && list.children.length === 0) badge.classList.add("hidden");
+    else if (badge) badge.textContent = list.children.length;
   });
+}
+
+function formatUsername(name) {
+  if (!name) return "";
+  if (name.length > 20) {
+    return name.substring(0, 3) + "..." + name.substring(name.length - 3);
+  }
+  return name;
 }

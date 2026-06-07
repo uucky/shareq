@@ -13,7 +13,7 @@
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   
@@ -243,29 +243,7 @@
             <!-- Quick Suggestions -->
             <div class="suggestions-container">
               <h4>🔥 热门 KTV 点播推荐</h4>
-              <div class="suggestions-tags" id="suggestions-tags">
-                <!-- Autopopulated -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Room Members / User List Card -->
-          <div class="glass-card">
-            <div class="card-header">
-              <h2><i class="fa-solid fa-users"></i> 房间成员 / Members</h2>
-              <p class="card-subtitle">当前在线的好友及身份权限</p>
-            </div>
-            <div class="members-container" id="members-list-container">
-              <!-- Rendered via Javascript -->
-            </div>
-          </div>
-        </section>
-
-        <!-- RIGHT COLUMN: CURRENT PLAYLIST QUEUE & NOW PLAYING -->
-        <section class="grid-col playlist-section">
-          
-          <!-- ENLARGED NOW PLAYING HIGHLIGHT PANEL -->
-          <div class="now-playing-panel glass-card enlarged-playing" id="now-playing-panel">
+              <div          <div class="now-playing-panel glass-card enlarged-playing" id="now-playing-panel">
             <div class="playing-header">
               <div class="playing-label">
                 <span class="indicator-dot blinking"></span> 正在演唱 / Now Playing
@@ -283,18 +261,9 @@
               <div class="playing-details-large">
                 <h3 id="playing-title" class="playing-title-large">暂无演唱歌曲</h3>
                 <p id="playing-singer" class="playing-singer-large">点歌后即可在歌单开始</p>
-                <div class="playing-meta-info">
-                  <div class="playing-request-by-large" style="display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    点歌人: <span id="playing-user-badge" class="badge-user">--</span>
-                    <span id="playing-dedicate-badge" class="dedicate-tag hidden"></span>
-                  </div>
-                  <!-- Reaction Count Stats Display -->
-                  <div class="playing-reaction-summary" id="playing-reaction-summary">
-                    <span class="stat-reaction" title="收到的玫瑰"><span class="reaction-emoji">🌹</span> <span id="count-rose">0</span></span>
-                    <span class="stat-reaction" title="收到的掌声"><span class="reaction-emoji">👏</span> <span id="count-clap">0</span></span>
-                    <span class="stat-reaction" title="被扔的鸡蛋"><span class="reaction-emoji">🥚</span> <span id="count-egg">0</span></span>
-                    <span class="stat-reaction" title="被扔的皮鞋"><span class="reaction-emoji">👞</span> <span id="count-shoe">0</span></span>
-                  </div>
+                <div class="playing-request-by-large" style="display: flex; justify-content: center; width: 100%;">
+                  <span id="playing-user-badge" class="badge-user-singing">--</span>
+                  <span id="playing-dedicate-badge" class="dedicate-tag hidden" style="margin-left: 10px; vertical-align: middle;"></span>
                 </div>
               </div>
               
@@ -306,9 +275,37 @@
 
             <!-- Audience Interactive Panel -->
             <div class="audience-actions-panel" id="audience-actions-panel">
-              <div class="audience-actions-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span class="audience-action-title" style="margin-bottom: 0;">给歌手互动送礼：</span>
+              <div class="audience-actions-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <span class="audience-action-title" style="margin-bottom: 0;">给歌手互动送礼：</span>
+                  <!-- Reaction Count Stats Display -->
+                  <div class="playing-reaction-summary" id="playing-reaction-summary" style="display: flex; gap: 10px;">
+                    <span class="stat-reaction" title="收到的玫瑰" style="background: transparent; border: none; padding: 0; font-size: 0.85rem;"><span class="reaction-emoji">🌹</span> <span id="count-rose">0</span></span>
+                    <span class="stat-reaction" title="收到的掌声" style="background: transparent; border: none; padding: 0; font-size: 0.85rem;"><span class="reaction-emoji">👏</span> <span id="count-clap">0</span></span>
+                    <span class="stat-reaction" title="被扔的鸡蛋" style="background: transparent; border: none; padding: 0; font-size: 0.85rem;"><span class="reaction-emoji">🥚</span> <span id="count-egg">0</span></span>
+                    <span class="stat-reaction" title="被扔的皮鞋" style="background: transparent; border: none; padding: 0; font-size: 0.85rem;"><span class="reaction-emoji">👞</span> <span id="count-shoe">0</span></span>
+                  </div>
+                </div>
                 <button type="button" class="btn-reaction-mute" id="btn-reaction-mute" title="静音/取消静音礼物音效">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+              </div>
+              <div class="reaction-buttons-grid">
+                <button type="button" class="btn-reaction-gift" data-reaction="rose" title="送上玫瑰花 (Rose)">
+                  <span class="gift-emoji">🌹</span> 玫瑰花
+                </button>
+                <button type="button" class="btn-reaction-gift" data-reaction="clap" title="热烈鼓掌 (Applause)">
+                  <span class="gift-emoji">👏</span> 鼓掌
+                </button>
+                <button type="button" class="btn-reaction-gift" data-reaction="egg" title="扔臭鸡蛋 (Egg)">
+                  <span class="gift-emoji">🥚</span> 扔鸡蛋
+                </button>
+                <button type="button" class="btn-reaction-gift" data-reaction="shoe" title="扔旧皮鞋 (Shoe)">
+                  <span class="gift-emoji">👞</span> 丢皮鞋
+                </button>
+              </div>
+            </div>
+          </div>��物音效">
                   <i class="fa-solid fa-volume-high"></i>
                 </button>
               </div>
@@ -499,6 +496,6 @@
   <!-- SOCKET.IO CLIENT -->
   <script src="/socket.io/socket.io.js"></script>
   <!-- Frontend Javascript Logic -->
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

@@ -9,6 +9,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -150,7 +154,13 @@ loadRooms();
 setInterval(saveRooms, 5 * 60 * 1000);
 
 // Serve static files from the public folder
-app.use(express.static(path.join(__dirname, 'public')));
+const publicPath = path.join(__dirname, 'public');
+console.log(`[STARTUP] Serving static files from: ${publicPath}`);
+console.log(`[STARTUP] Public folder exists: ${fs.existsSync(publicPath)}`);
+if (fs.existsSync(publicPath)) {
+  console.log(`[STARTUP] Public folder contents:`, fs.readdirSync(publicPath));
+}
+app.use(express.static(publicPath));
 
 // Fallback to index.html using RegExp for Express 5 compatibility
 app.get(/.*/, (req, res) => {
@@ -400,7 +410,7 @@ io.on('connection', (socket) => {
       const newSong = {
         id: songId,
         title: String(dedication.title).trim(),
-        singer: String(dedication.targetUsername).trim(),
+        singer: String(dedication.singer || '').trim(),
         link: String(dedication.link || '').trim(),
         requestedBy: dedication.targetUsername,
         requestedByAvatar: getUserAvatar(dedication.roomId, dedication.targetUserId),
