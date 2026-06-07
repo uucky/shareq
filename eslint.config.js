@@ -38,7 +38,6 @@ export default [
   {
     files: [
       'server.js',
-      'index.js',
       'scripts/**/*.js',
       'src/**/*.js',
       'test/**/*.js'

@@ -1,5 +1,4 @@
 import express from 'express';
-import fs from 'node:fs';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,11 +52,6 @@ export function createShareQServer(options = {}) {
     saveInterval.unref?.();
   }
 
-  logger.log(`[STARTUP] Serving static files from: ${publicPath}`);
-  logger.log(`[STARTUP] Public folder exists: ${fs.existsSync(publicPath)}`);
-  if (fs.existsSync(publicPath)) {
-    logger.log('[STARTUP] Public folder contents:', fs.readdirSync(publicPath));
-  }
   app.use(express.static(publicPath));
 
   // Fallback to index.html using RegExp for Express 5 compatibility.
