@@ -279,10 +279,11 @@ test('duplicate usernames are rejected in the browser flow', async ({ browser, p
     const dialogPromise = userBSession.page.waitForEvent('dialog', {
       timeout: 10_000
     });
-    await userBSession.page.locator('#join-room-btn').click();
+    const clickPromise = userBSession.page.locator('#join-room-btn').click();
     const dialog = await dialogPromise;
     expect(dialog.message()).toContain('昵称');
     await dialog.accept();
+    await clickPromise;
 
     await expect(userBSession.page.locator('#login-view')).toBeVisible();
     await expect(userBSession.page.locator('#room-view')).toBeHidden();
