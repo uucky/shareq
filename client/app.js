@@ -16,6 +16,8 @@ import { renderStats } from './js/stats.js';
 import { initializeSocketHandlers } from './js/socket-handlers.js';
 import { setupEventListeners } from './js/events.js';
 
+const COMMIT_URL_BASE = 'https://github.com/uucky/shareq/commit/';
+
 // Initialize Elements
 document.addEventListener('DOMContentLoaded', () => {
   renderAppVersion();
@@ -127,9 +129,25 @@ function renderAppVersion() {
     return;
   }
 
-  const versionText = `v${__APP_VERSION__} (${__APP_COMMIT__})`;
-  versionElement.textContent = versionText;
-  versionElement.title = `v${__APP_VERSION__} (${__APP_COMMIT_FULL__})`;
+  const fullVersionText = `v${__APP_VERSION__} (${__APP_COMMIT_FULL__})`;
+  clearChildren(versionElement);
+  appendText(versionElement, `v${__APP_VERSION__} (`);
+
+  if (__APP_COMMIT_FULL__ === 'unknown') {
+    appendText(versionElement, __APP_COMMIT__);
+  } else {
+    const commitLink = document.createElement('a');
+    commitLink.className = 'version-commit-link';
+    commitLink.href = `${COMMIT_URL_BASE}${encodeURIComponent(__APP_COMMIT_FULL__)}`;
+    commitLink.target = '_blank';
+    commitLink.rel = 'noopener noreferrer';
+    commitLink.textContent = __APP_COMMIT__;
+    commitLink.title = `Open commit ${__APP_COMMIT_FULL__} on GitHub`;
+    versionElement.appendChild(commitLink);
+  }
+
+  appendText(versionElement, ')');
+  versionElement.title = fullVersionText;
 }
 
 // Logic: Handle User Login Join / Creation Action
