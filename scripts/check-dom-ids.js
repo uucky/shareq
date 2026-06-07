@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const publicDir = path.resolve('public');
-const indexHtmlPath = path.join(publicDir, 'index.html');
+const clientDir = path.resolve('client');
+const indexHtmlPath = path.join(clientDir, 'index.html');
 
 function listJsFiles(dir) {
   const files = [];
@@ -27,7 +27,7 @@ function collectMatches(text, regex) {
 }
 
 const html = fs.readFileSync(indexHtmlPath, 'utf8');
-const jsFiles = listJsFiles(publicDir);
+const jsFiles = listJsFiles(clientDir);
 const jsSources = jsFiles.map((file) => ({
   file,
   text: fs.readFileSync(file, 'utf8')

@@ -29,11 +29,11 @@ const browserGlobals = {
 
 export default [
   {
-    ignores: ['data/**', 'node_modules/**']
+    ignores: ['data/**', 'dist/**', 'node_modules/**']
   },
   js.configs.recommended,
   {
-    files: ['server.js', 'scripts/**/*.js', 'src/**/*.js', 'test/**/*.js'],
+    files: ['server.js', 'vite.config.js', 'scripts/**/*.js', 'src/**/*.js', 'test/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -53,7 +53,7 @@ export default [
     }
   },
   {
-    files: ['public/app.js', 'public/js/**/*.js'],
+    files: ['client/app.js', 'client/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

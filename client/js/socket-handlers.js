@@ -1,3 +1,5 @@
+import { io } from 'socket.io-client';
+
 import { state } from './state.js';
 
 export function initializeSocketHandlers(deps) {
@@ -18,7 +20,7 @@ export function initializeSocketHandlers(deps) {
   } = deps;
 
   // Initialize Socket.io
-  state.socket = window.io();
+  state.socket = io();
 
   state.socket.on('connect', () => {
     const lastRoom = localStorage.getItem('shareq_last_room');

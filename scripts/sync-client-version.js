@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
 const packageJsonPath = 'package.json';
-const indexHtmlPath = 'public/index.html';
+const indexHtmlPath = 'client/index.html';
 const versionMarkerRegex = /<strong id="app-version">([^<]*)<\/strong>/g;
 
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));

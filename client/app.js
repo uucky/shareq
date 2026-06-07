@@ -1,4 +1,5 @@
 // ShareQ - KTV Client App Logic
+import './style.css';
 import { playSound } from './js/audio.js';
 import { createAvatarElement, renderEmojiGrid, setAvatarElement, updateAvatarPreview } from './js/avatar.js';
 import { emojis, hotSongs } from './js/data.js';

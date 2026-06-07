@@ -13,7 +13,7 @@ const appDir = path.dirname(srcDir);
 
 export function createShareQServer(options = {}) {
   const logger = options.logger || console;
-  const publicPath = options.publicPath || path.join(appDir, 'public');
+  const publicPath = options.publicPath || path.join(appDir, 'dist', 'public');
   const databaseFile = resolveDatabaseFile({
     appDir,
     dataDir: options.dataDir || process.env.DATA_DIR,

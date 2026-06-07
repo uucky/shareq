@@ -2,6 +2,7 @@
 .cache
 node_modules
 data
+dist
 npm-debug.log
 Dockerfile
 docker-compose.yml
