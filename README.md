@@ -123,8 +123,10 @@ shareq/
 │   └── storage.js     # JSON 数据加载、保存与过期清理
 ├── public/
 │   ├── index.html     # 单页应用 HTML 结构
-│   ├── app.js         # 客户端逻辑 (WebSocket, DOM, Web Audio)
+│   ├── app.js         # 客户端启动与剩余渲染逻辑
+│   ├── js/            # 前端原生 ES modules (Socket, events, audio, archive 等)
 │   └── style.css      # 全局样式 (CSS 变量, 亮/暗主题)
+├── scripts/           # 维护脚本
 ├── data/              # 房间数据持久化存储
 ├── test/              # Node.js 原生测试
 ├── changelog.md       # 更新日志
@@ -140,10 +142,11 @@ shareq/
 
 ```bash
 npm run lint
+npm run check:ids
 npm test
 ```
 
-测试会启动临时本地端口并使用临时数据文件，不会写入 `data/rooms.json`。
+`check:ids` 会检查前端 JS 中引用的 DOM ID 是否存在于 HTML 或动态模板中。测试会启动临时本地端口并使用临时数据文件，不会写入 `data/rooms.json`。
 
 ---
 

@@ -24,7 +24,7 @@ export default [
     files: [
       'server.js',
       'index.js',
-      'check_ids.js',
+      'scripts/**/*.js',
       'src/**/*.js',
       'test/**/*.js'
     ],

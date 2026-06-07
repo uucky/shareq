@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint server.js index.js check_ids.js src test",
+    "check:ids": "node scripts/check-dom-ids.js",
+    "lint": "eslint server.js index.js scripts src test",
     "start": "node server.js",
     "test": "node --test test/integration.test.js"
   },
