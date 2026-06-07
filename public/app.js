@@ -2075,8 +2075,11 @@ function updateToastHistoryUI() {
     return;
   }
 
-  for (let i = 0; i < filteredHistory.length; i++) {
-    const item = filteredHistory[i];
+  // Display newest items on top
+  const displayedHistory = [...filteredHistory].reverse();
+
+  for (let i = 0; i < displayedHistory.length; i++) {
+    const item = displayedHistory[i];
     const el = document.createElement("div");
     el.className = `history-toast-item toast-${item.type}`;
     
@@ -2097,8 +2100,6 @@ function updateToastHistoryUI() {
     `;
     list.appendChild(el);
   }
-  // Auto-scroll to the bottom like Twitch chat
-  list.scrollTop = list.scrollHeight;
 }
 
 // Compute KTV Session statistics
