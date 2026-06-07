@@ -1,5 +1,10 @@
 # ShareQ KTV - Change Log with Time and Date
 
+## [2026-06-07 19:00:00]
+### Refactored & Optimized on Dev
+- **Twitch-Style Activity Chat Stream**: Redesigned the third column notification panel to render as a Twitch-style chat feed. Older items are printed at the top, and new items append to the bottom with an automatic scroll-to-bottom. Replaced the system notification popups from floating over the playlist (only direct dedications still float as popups).
+- **Single-Row Playlist Item Layout**: Refactored the song list cards for both upcoming songs and historical list so that "Title", "Singer", and "Requester/dedication info" are layed out inline in a single flex row separated by a dot (`•`), instead of stacking vertically across three separate lines.
+
 ## [2026-06-06 22:30:00]
 ### Refactored & Optimized on Dev
 - **3-Column Grid Layout**: Redesigned the main dashboard view into a 3-column layout on desktop viewports. System notifications/activity dynamic stream has been relocated to the static 3rd column on the right.

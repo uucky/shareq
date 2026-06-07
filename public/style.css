@@ -1451,6 +1451,42 @@ body.light-theme .brand-header h1 {
   margin-right: 12px;
 }
 
+.song-details-col.song-single-row {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  row-gap: 4px !important;
+}
+
+.song-details-col.song-single-row .song-title-text {
+  max-width: 220px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.song-details-col.song-single-row .song-singer-text {
+  max-width: 150px;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+}
+
+.song-details-col.song-single-row .song-requester-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 0 !important;
+  vertical-align: middle;
+}
+
+.song-divider {
+  color: var(--text-muted);
+  opacity: 0.4;
+  font-size: 0.8rem;
+  user-select: none;
+}
+
 .song-title-row {
   display: flex;
   align-items: center;
@@ -2174,34 +2210,29 @@ body.light-theme .dropdown-label {
 }
 
 .history-toast-item {
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border-left: 3px solid var(--color-secondary);
-  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.01);
+  border: none;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 4px;
 }
 
 body.light-theme .history-toast-item {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(0, 0, 0, 0.01);
   color: var(--text-primary);
 }
 
-.history-toast-item.toast-add { border-left-color: var(--color-success); }
-.history-toast-item.toast-pin { border-left-color: var(--color-orange); }
-.history-toast-item.toast-delete { border-left-color: var(--color-danger); }
-.history-toast-item.toast-shuffle { border-left-color: var(--color-secondary); }
-.history-toast-item.toast-next { border-left-color: var(--color-success); }
-.history-toast-item.toast-dedicate { border-left-color: #c084fc; }
-
-.history-toast-time {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  align-self: flex-end;
-}
+.toast-badge-add { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.toast-badge-pin { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.toast-badge-delete { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.toast-badge-shuffle { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.toast-badge-next { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.toast-badge-dedicate { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.toast-badge-system { background: rgba(255, 255, 255, 0.1); color: var(--text-secondary); }
 
 .no-history-msg {
   text-align: center;

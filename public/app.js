@@ -1020,17 +1020,16 @@ function renderPlaylist() {
     
     row.innerHTML = `
       <div class="song-index-col">${i}</div>
-      <div class="song-details-col">
-        <div class="song-title-row">
-          <span class="song-title-text">${song.title}</span>
-        </div>
-        <div class="song-singer-text">${song.singer || '未知歌手'}</div>
-        <div class="song-requester-row">
+      <div class="song-details-col song-single-row">
+        <span class="song-title-text">${song.title}</span>
+        <span class="song-divider">•</span>
+        <span class="song-singer-text">${song.singer || '未知歌手'}</span>
+        <span class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
           <span class="song-requester-name">${song.requestedBy}</span>
           ${song.dedicatedBy ? `<span class="dedicate-tag"><i class="fa-solid fa-gift"></i> ${song.dedicatedBy} 指名</span>` : ''}
           ${song.link ? `<a class="song-accompaniment-link" href="${song.link}" target="_blank" title="伴奏链接"><i class="fa-solid fa-link"></i> 伴奏</a>` : ''}
-        </div>
+        </span>
       </div>
       <div class="song-actions-col">
         <button type="button" class="action-icon-btn priority-btn" title="置顶这首歌 (移到最前)" data-id="${song.id}">
@@ -1139,17 +1138,16 @@ function renderHistory() {
     
     item.innerHTML = `
       <div class="song-index-col"><i class="fa-solid fa-circle-check" style="color: var(--color-secondary);"></i></div>
-      <div class="song-details-col">
-        <div class="song-title-row">
-          <span class="song-title-text" style="text-decoration: line-through; opacity: 0.6;">${song.title}</span>
-        </div>
-        <div class="song-singer-text">${song.singer || '未知歌手'}</div>
-        <div class="song-requester-row">
+      <div class="song-details-col song-single-row">
+        <span class="song-title-text" style="text-decoration: line-through; opacity: 0.6;">${song.title}</span>
+        <span class="song-divider">•</span>
+        <span class="song-singer-text">${song.singer || '未知歌手'}</span>
+        <span class="song-requester-row">
           <span class="song-requester-avatar">${renderAvatarHTML(song.requestedByAvatar)}</span>
           <span class="song-requester-name">${song.requestedBy}</span>
-          <span class="history-time" style="margin-left: auto;"><i class="fa-solid fa-circle-play"></i> 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}</span>
-        </div>
-        <div class="playing-reaction-summary" style="margin-top: 8px;">
+        </span>
+        <span class="history-time" style="margin-left: auto; font-size: 0.78rem; opacity: 0.75;"><i class="fa-solid fa-circle-play"></i> 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}</span>
+        <div class="playing-reaction-summary" style="margin-top: 4px; width: 100%;">
           <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">🌹</span> ${reactCount.rose || 0}</span>
           <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">👏</span> ${reactCount.clap || 0}</span>
           <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">🥚</span> ${reactCount.egg || 0}</span>
@@ -1390,6 +1388,9 @@ function showToast(type, text) {
     }
   }
   updateToastHistoryUI();
+
+  // Only show floating toast popups for direct 'dedicate' notifications
+  if (type !== 'dedicate') return;
 
   const container = document.getElementById("notification-center");
   if (!container) return;
@@ -1976,7 +1977,7 @@ function updateToastHistoryUI() {
     return;
   }
 
-  for (let i = filteredHistory.length - 1; i >= 0; i--) {
+  for (let i = 0; i < filteredHistory.length; i++) {
     const item = filteredHistory[i];
     const el = document.createElement("div");
     el.className = `history-toast-item toast-${item.type}`;
@@ -1987,16 +1988,19 @@ function updateToastHistoryUI() {
     else if (item.type === 'delete') icon = "fa-trash-can";
     else if (item.type === 'shuffle') icon = "fa-shuffle";
     else if (item.type === 'next') icon = "fa-forward-step";
+    else if (item.type === 'dedicate') icon = "fa-gift";
+
+    const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     el.innerHTML = `
-      <div class="toast-item-header" style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; opacity:0.75; margin-bottom:4px;">
-        <span><i class="fa-solid ${icon}"></i> ${item.type.toUpperCase()}</span>
-        <span>${new Date(item.time).toLocaleTimeString()}</span>
-      </div>
-      <div class="toast-item-body" style="font-size:0.85rem;">${item.text}</div>
+      <span class="chat-time" style="font-size:0.7rem; opacity:0.4; margin-right: 6px; flex-shrink: 0;">${timeStr}</span>
+      <span class="chat-badge toast-badge-${item.type}" style="font-size:0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold; flex-shrink: 0;"><i class="fa-solid ${icon}"></i></span>
+      <span class="chat-text" style="font-size:0.85rem; line-height: 1.4; word-break: break-all;">${item.text}</span>
     `;
     list.appendChild(el);
   }
+  // Auto-scroll to the bottom like Twitch chat
+  list.scrollTop = list.scrollHeight;
 }
 
 // Compute KTV Session statistics
