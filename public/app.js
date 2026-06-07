@@ -574,13 +574,24 @@ function setupEventListeners() {
   // Mobile Toast Notification Trigger
   const mobileToastTrigger = document.getElementById("mobile-toast-trigger");
   if (mobileToastTrigger) {
-    mobileToastTrigger.addEventListener("click", () => {
+    mobileToastTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
       const section = document.querySelector(".notifications-section");
       if (section) {
         section.classList.toggle("open-on-mobile");
         if (section.classList.contains("open-on-mobile")) {
           unreadToastsCount = 0;
           updateToastHistoryUI();
+        }
+      }
+    });
+
+    // Click outside to close
+    document.addEventListener("click", (e) => {
+      const section = document.querySelector(".notifications-section");
+      if (section && section.classList.contains("open-on-mobile")) {
+        if (!section.contains(e.target) && !mobileToastTrigger.contains(e.target)) {
+          section.classList.remove("open-on-mobile");
         }
       }
     });
