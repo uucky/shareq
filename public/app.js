@@ -467,7 +467,12 @@ function setupEventListeners() {
 
   const brandLogo = document.getElementById("brand-logo-egg");
   if (brandLogo) {
-    brandLogo.addEventListener("click", showLogoTip);
+    brandLogo.addEventListener("click", () => {
+      if (confirm("您确定要离开当前 KTV 点歌房返回首页吗？")) {
+        localStorage.removeItem("shareq_last_room");
+        window.location.href = window.location.origin + window.location.pathname;
+      }
+    });
   }
 
   // Corner Easter Egg Button -> openArchiveModal
@@ -578,6 +583,21 @@ function setupEventListeners() {
 
     modal.classList.remove("hidden");
   });
+
+  // Mobile Toast Notification Trigger
+  const mobileToastTrigger = document.getElementById("mobile-toast-trigger");
+  if (mobileToastTrigger) {
+    mobileToastTrigger.addEventListener("click", () => {
+      const section = document.querySelector(".notifications-section");
+      if (section) {
+        section.classList.toggle("open-on-mobile");
+        if (section.classList.contains("open-on-mobile")) {
+          unreadToastsCount = 0;
+          updateToastHistoryUI();
+        }
+      }
+    });
+  }
 
   // Modal Cancel
   document.getElementById("close-modal-btn").addEventListener("click", () => modal.classList.add("hidden"));
@@ -1995,10 +2015,20 @@ function updateToastHistoryUI() {
 
   if (badge) {
     if (unreadToastsCount > 0) {
-      badge.textContent = unreadToastsCount;
+      badge.textContent = unreadToastsCount > 99 ? '99+' : unreadToastsCount;
       badge.classList.remove("hidden");
     } else {
       badge.classList.add("hidden");
+    }
+  }
+
+  const mobileBadge = document.getElementById("mobile-toast-badge");
+  if (mobileBadge) {
+    if (unreadToastsCount > 0) {
+      mobileBadge.textContent = unreadToastsCount > 99 ? '99+' : unreadToastsCount;
+      mobileBadge.classList.remove("hidden");
+    } else {
+      mobileBadge.classList.add("hidden");
     }
   }
 
