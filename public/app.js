@@ -239,7 +239,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Load username & avatar from localStorage
   currentUsername = localStorage.getItem("shareq_username") || "";
-  currentAvatar = localStorage.getItem("shareq_avatar") || "🎤";
+  currentAvatar = localStorage.getItem("shareq_avatar");
+  if (!currentAvatar) {
+    const randomIdx = Math.floor(Math.random() * emojis.length);
+    currentAvatar = emojis[randomIdx];
+    localStorage.setItem("shareq_avatar", currentAvatar);
+  }
 
   // Pre-fill fields
   document.getElementById("setup-username").value = currentUsername;
@@ -474,7 +479,10 @@ function setupEventListeners() {
   const setupFileInput = document.getElementById("setup-avatar-file");
   const setupUploadBtn = document.getElementById("setup-upload-avatar-btn");
   if (setupUploadBtn && setupFileInput) {
-    setupUploadBtn.addEventListener("click", () => setupFileInput.click());
+    setupUploadBtn.addEventListener("click", () => {
+      setupFileInput.value = ""; // Clear value so selecting same file always fires change event
+      setupFileInput.click();
+    });
     setupFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -491,7 +499,10 @@ function setupEventListeners() {
   const modalFileInput = document.getElementById("modal-avatar-file");
   const modalUploadBtn = document.getElementById("modal-upload-avatar-btn");
   if (modalUploadBtn && modalFileInput) {
-    modalUploadBtn.addEventListener("click", () => modalFileInput.click());
+    modalUploadBtn.addEventListener("click", () => {
+      modalFileInput.value = ""; // Clear value so selecting same file always fires change event
+      modalFileInput.click();
+    });
     modalFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -1368,7 +1379,15 @@ function updateNowPlaying() {
     const noteIcon = document.getElementById("playing-music-note");
     const avatarDisc = document.getElementById("playing-avatar-disc");
     if(noteIcon && avatarDisc) {
-      const av = currentSong.requestedByAvatar || "";
+      // Look up current avatar of the singer from active room users list first, then fall back to requestedByAvatar
+      let av = "";
+      const singerUser = roomUsers.find(u => u.username === currentSong.requestedBy);
+      if (singerUser && singerUser.avatar) {
+        av = singerUser.avatar;
+      } else {
+        av = currentSong.requestedByAvatar || "🎤";
+      }
+
       const isImage = av.startsWith("data:image") || av.startsWith("http://") || av.startsWith("https://");
       if (isImage) {
         noteIcon.classList.add("hidden");
