@@ -188,6 +188,16 @@ export function registerSocketHandlers({
     });
   }
 
+  function persistRooms(socket) {
+    if (saveRooms() !== false) {
+      return true;
+    }
+
+    logger.error('Failed to persist room data after socket event.');
+    socket.emit('system-message', { type: 'error', text: '歌单保存失败，请稍后重试' });
+    return false;
+  }
+
   io.on('connection', socket => {
     logger.log(`Socket connected: ${socket.id}`);
 
@@ -299,7 +309,7 @@ export function registerSocketHandlers({
         type: 'add',
         text: `${userData.username} 点了《${result.song.title}》`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('dedicate-song', payload => {
@@ -389,7 +399,7 @@ export function registerSocketHandlers({
           dedication,
           getUserAvatar(dedication.roomId, dedication.targetUserId)
         );
-        saveRooms();
+        persistRooms(socket);
 
         io.to(dedication.roomId).emit('playlist-updated', room.songs);
         io.to(dedication.roomId).emit('system-message', {
@@ -441,7 +451,7 @@ export function registerSocketHandlers({
         type: 'pin',
         text: `${userData.username} 置顶了《${result.song.title}》`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('delete-song', payload => {
@@ -475,7 +485,7 @@ export function registerSocketHandlers({
         type: 'delete',
         text: `${userData.username} 删除了《${result.song.title}》`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('shuffle-playlist', () => {
@@ -499,7 +509,7 @@ export function registerSocketHandlers({
         type: 'shuffle',
         text: `${userData.username} 打乱了歌单`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('next-song', () => {
@@ -524,7 +534,7 @@ export function registerSocketHandlers({
         type: 'next',
         text: `${userData.username} 开启了下一首，已移至已唱《${result.song.title}》`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('prev-song', () => {
@@ -549,7 +559,7 @@ export function registerSocketHandlers({
         type: 'next',
         text: `${userData.username} 返回了上一首《${result.song.title}》`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('undo-playlist', () => {
@@ -574,7 +584,7 @@ export function registerSocketHandlers({
         type: 'shuffle',
         text: `${userData.username} 执行了撤销`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('redo-playlist', () => {
@@ -599,7 +609,7 @@ export function registerSocketHandlers({
         type: 'shuffle',
         text: `${userData.username} 执行了前进`
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('promote-moderator', payload => {
@@ -625,7 +635,7 @@ export function registerSocketHandlers({
       }
 
       emitRoles(userData.roomId, room);
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('transfer-host', payload => {
@@ -651,7 +661,7 @@ export function registerSocketHandlers({
       }
 
       emitRoles(userData.roomId, room);
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('kick-user', payload => {
@@ -709,7 +719,7 @@ export function registerSocketHandlers({
         return;
       }
 
-      saveRooms();
+      persistRooms(socket);
       io.to(userData.roomId).emit('session-ended');
     });
 
@@ -741,7 +751,7 @@ export function registerSocketHandlers({
         username: userData.username,
         avatar: userData.avatar
       });
-      saveRooms();
+      persistRooms(socket);
     });
 
     socket.on('disconnect', () => {

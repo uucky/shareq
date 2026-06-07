@@ -44,7 +44,7 @@ export function createShareQServer(options = {}) {
   const activeConnections = new Map();
   const pendingDedications = new Map();
 
-  const saveRooms = () => saveRoomsToFile(roomsData, databaseFile, logger);
+  const saveRooms = options.saveRooms || (() => saveRoomsToFile(roomsData, databaseFile, logger));
   const saveIntervalMs = options.saveIntervalMs ?? 5 * 60 * 1000;
   let saveInterval = null;
   if (saveIntervalMs > 0) {

@@ -43,6 +43,27 @@ function waitForSocket(socket, event, timeoutMs = 1000) {
   });
 }
 
+function waitForSocketMatching(socket, event, predicate, timeoutMs = 1000) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      socket.off(event, onEvent);
+      reject(new Error(`Timed out waiting for matching socket event "${event}"`));
+    }, timeoutMs);
+
+    function onEvent(payload) {
+      if (!predicate(payload)) {
+        return;
+      }
+
+      clearTimeout(timeout);
+      socket.off(event, onEvent);
+      resolve(payload);
+    }
+
+    socket.on(event, onEvent);
+  });
+}
+
 function waitForNoSocketEvent(socket, event, timeoutMs = 100) {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -82,13 +103,14 @@ function joinRoom(client, { roomId, username, userId, avatar = '🎤' }) {
   return roomDataPromise;
 }
 
-async function createTestServer() {
+async function createTestServer(options = {}) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shareq-test-'));
   const shareq = createShareQServer({
     databaseFile: path.join(tmpDir, 'shareq.sqlite'),
     enableRequestLog: false,
     logger: silentLogger,
-    saveIntervalMs: 0
+    saveIntervalMs: 0,
+    ...options
   });
   const port = await listen(shareq.httpServer);
 
@@ -213,6 +235,58 @@ test('adding a song broadcasts playlist and persists room data', async () => {
 
     const savedRooms = loadRooms(server.shareq.databaseFile, silentLogger);
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('socket save failures emit an error without rolling back in-memory changes', async () => {
+  let saveCalls = 0;
+  const loggerErrors = [];
+  const failingLogger = {
+    log() {},
+    error(...args) {
+      loggerErrors.push(args);
+    }
+  };
+  const server = await createTestServer({
+    logger: failingLogger,
+    saveRooms() {
+      saveCalls++;
+      return false;
+    }
+  });
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'SAVEFAIL',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const playlistPromise = waitForSocket(client, 'playlist-updated');
+    const errorPromise = waitForSocketMatching(
+      client,
+      'system-message',
+      message => message.type === 'error' && message.text.includes('保存失败')
+    );
+    client.emit('add-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: ''
+    });
+
+    const [playlist, errorMessage] = await Promise.all([playlistPromise, errorPromise]);
+
+    assert.equal(saveCalls, 1);
+    assert.equal(playlist.length, 1);
+    assert.equal(errorMessage.type, 'error');
+    assert.equal(server.shareq.roomsData.SAVEFAIL.songs.length, 1);
+    assert.equal(server.shareq.roomsData.SAVEFAIL.songs[0].title, '七里香');
+    assert.equal(loggerErrors.length, 1);
+    assert.match(loggerErrors[0][0], /persist room data/);
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }
