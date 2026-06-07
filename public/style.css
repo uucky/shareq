@@ -722,6 +722,7 @@ body.light-theme .brand-header h1 {
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast);
   text-align: right;
+  flex-shrink: 0;
 }
 
 .profile-widget:hover {
@@ -1864,18 +1865,29 @@ body.light-theme .brand-header h1 {
 @media (max-width: 680px) {
   .room-header {
     grid-template-columns: 1fr;
-    gap: 12px;
-    justify-items: center;
+    gap: 8px;
   }
   
-  .header-left, .header-center, .header-right {
-    justify-content: center;
+  .header-left {
+    justify-content: flex-start;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  
+  .header-center {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .header-right {
+    justify-content: flex-start;
     width: 100%;
   }
 
   .room-badge {
-    width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
   }
   
   #login-view {
@@ -1941,6 +1953,10 @@ body.light-theme {
 }
 
 /* Light Theme Component Specific Adjustments */
+body.light-theme .glass-card,
+body.light-theme .room-header {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
 body.light-theme .card-header h2,
 body.light-theme .playing-title-large,
 body.light-theme .song-title-text,

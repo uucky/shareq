@@ -2039,12 +2039,12 @@ function updateToastHistoryUI() {
     else if (item.type === 'next') icon = "fa-forward-step";
     else if (item.type === 'dedicate') icon = "fa-gift";
 
-    const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
     el.innerHTML = `
-      <span class="chat-time" style="font-size:0.7rem; opacity:0.4; margin-right: 6px; flex-shrink: 0;">${timeStr}</span>
       <span class="chat-badge toast-badge-${item.type}" style="font-size:0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold; flex-shrink: 0;"><i class="fa-solid ${icon}"></i></span>
-      <span class="chat-text" style="font-size:0.85rem; line-height: 1.4; word-break: break-all;">${item.text}</span>
+      <span class="chat-text" style="font-size:0.85rem; line-height: 1.4; word-break: break-all; flex-grow: 1;">${item.text}</span>
+      <span class="chat-time" style="font-size:0.7rem; opacity:0.4; margin-left: 6px; flex-shrink: 0; align-self: flex-start; margin-top: 2px;">${timeStr}</span>
     `;
     list.appendChild(el);
   }
