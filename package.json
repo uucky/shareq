@@ -8,6 +8,7 @@
     "format": "prettier --write public/index.html",
     "format:check": "prettier --check public/index.html",
     "lint": "eslint server.js scripts src test public/app.js public/js",
+    "migrate:sqlite": "node scripts/migrate-json-to-sqlite.js",
     "start": "node server.js",
     "test": "node --test test/*.test.js",
     "test:e2e": "playwright test",

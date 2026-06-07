@@ -14,7 +14,7 @@ import {
   redoAction,
   undoAction
 } from '../src/rooms.js';
-import { createSaveData } from '../src/storage.js';
+import { createSaveData, loadRooms } from '../src/storage.js';
 
 const silentLogger = {
   log() {},
@@ -69,7 +69,7 @@ function joinRoom(client, { roomId, username, userId, avatar = '🎤' }) {
 async function createTestServer() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shareq-test-'));
   const shareq = createShareQServer({
-    dataFile: path.join(tmpDir, 'rooms.json'),
+    databaseFile: path.join(tmpDir, 'shareq.sqlite'),
     enableRequestLog: false,
     logger: silentLogger,
     saveIntervalMs: 0
@@ -176,7 +176,7 @@ test('adding a song broadcasts playlist and persists room data', async () => {
     assert.equal(playlist[0].title, '七里香');
     assert.equal(playlist[0].requestedBy, 'Alice');
 
-    const savedRooms = JSON.parse(fs.readFileSync(server.shareq.dataFile, 'utf8'));
+    const savedRooms = loadRooms(server.shareq.databaseFile, silentLogger);
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
   } finally {
     await closeTestServer(server, client ? [client] : []);
