@@ -1,4 +1,5 @@
 export const DEFAULT_AVATAR = '🎤';
+export const ALLOWED_REACTION_TYPES = Object.freeze(['rose', 'clap', 'egg', 'shoe']);
 export const DEFAULT_REACTIONS = Object.freeze({
   rose: 0,
   clap: 0,

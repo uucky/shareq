@@ -1,4 +1,5 @@
 import {
+  ALLOWED_REACTION_TYPES,
   canDeleteSong,
   canManageQueue,
   createReactions,
@@ -241,6 +242,10 @@ export function endSession(room, userData, now = Date.now()) {
 }
 
 export function addReaction(room, type) {
+  if (!ALLOWED_REACTION_TYPES.includes(type)) {
+    return { changed: false, reason: 'invalid_type' };
+  }
+
   if (room.songs.length === 0) {
     return { changed: false, reason: 'empty_queue' };
   }

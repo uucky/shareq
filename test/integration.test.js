@@ -43,6 +43,22 @@ function waitForSocket(socket, event, timeoutMs = 1000) {
   });
 }
 
+function waitForNoSocketEvent(socket, event, timeoutMs = 100) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      socket.off(event, onEvent);
+      resolve();
+    }, timeoutMs);
+
+    function onEvent(payload) {
+      clearTimeout(timeout);
+      reject(new Error(`Unexpected socket event "${event}": ${JSON.stringify(payload)}`));
+    }
+
+    socket.once(event, onEvent);
+  });
+}
+
 function connectClient(port) {
   const client = createClient(`http://127.0.0.1:${port}`, {
     forceNew: true,
@@ -235,6 +251,39 @@ test('add-song rejects empty and invalid payloads without mutating the queue', a
 
     assert.equal(invalidSingerError.type, 'error');
     assert.equal(server.shareq.roomsData.INVALIDSONGS.songs.length, 0);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('invalid reaction types do not update playlist or trigger effects', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'REACTIONS',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const playlistPromise = waitForSocket(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: ''
+    });
+    await playlistPromise;
+
+    const noPlaylistPromise = waitForNoSocketEvent(client, 'playlist-updated');
+    const noEffectPromise = waitForNoSocketEvent(client, 'trigger-reaction-effect');
+    client.emit('send-reaction', { type: 'tomato' });
+    await Promise.all([noPlaylistPromise, noEffectPromise]);
+
+    const reactions = server.shareq.roomsData.REACTIONS.songs[0].reactions;
+    assert.deepEqual(reactions, createReactions());
+    assert.equal(Object.hasOwn(reactions, 'tomato'), false);
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }

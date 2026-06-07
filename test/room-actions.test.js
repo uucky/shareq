@@ -310,3 +310,18 @@ test('addReaction initializes missing reaction state and increments counters', (
     shoe: 0
   });
 });
+
+test('addReaction ignores unknown reaction types without changing state', () => {
+  const room = createRoom({
+    songs: [
+      createSong('current', 'Alice', { reactions: createReactions() })
+    ]
+  });
+  const originalReactions = { ...room.songs[0].reactions };
+
+  const result = addReaction(room, 'tomato');
+
+  assert.deepEqual(result, { changed: false, reason: 'invalid_type' });
+  assert.deepEqual(room.songs[0].reactions, originalReactions);
+  assert.equal(Object.hasOwn(room.songs[0].reactions, 'tomato'), false);
+});
