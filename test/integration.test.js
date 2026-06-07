@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { clearTimeout, setTimeout } from 'node:timers';
 import { io as createClient } from 'socket.io-client';
 
 import { createShareQServer } from '../src/app.js';
@@ -26,9 +27,19 @@ function listen(server) {
   });
 }
 
-function waitForSocket(socket, event) {
-  return new Promise(resolve => {
-    socket.once(event, resolve);
+function waitForSocket(socket, event, timeoutMs = 1000) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      socket.off(event, onEvent);
+      reject(new Error(`Timed out waiting for socket event "${event}"`));
+    }, timeoutMs);
+
+    function onEvent(payload) {
+      clearTimeout(timeout);
+      resolve(payload);
+    }
+
+    socket.once(event, onEvent);
   });
 }
 
@@ -42,6 +53,17 @@ function connectClient(port) {
     client.once('connect', () => resolve(client));
     client.once('connect_error', reject);
   });
+}
+
+function joinRoom(client, { roomId, username, userId, avatar = '🎤' }) {
+  const roomDataPromise = waitForSocket(client, 'room-data');
+  client.emit('join-room', {
+    roomId,
+    username,
+    avatar,
+    userId
+  });
+  return roomDataPromise;
 }
 
 async function createTestServer() {
@@ -85,16 +107,11 @@ test('first socket to join a room becomes host', async () => {
 
   try {
     client = await connectClient(server.port);
-    const roomDataPromise = waitForSocket(client, 'room-data');
-
-    client.emit('join-room', {
+    const roomData = await joinRoom(client, {
       roomId: ' abc12 ',
       username: 'Alice',
-      avatar: '🎤',
       userId: 'user-1'
     });
-
-    const roomData = await roomDataPromise;
 
     assert.equal(roomData.roomId, 'ABC12');
     assert.equal(roomData.hostUserId, 'user-1');
@@ -111,14 +128,11 @@ test('duplicate usernames in the same room are rejected', async () => {
   try {
     const firstClient = await connectClient(server.port);
     clients.push(firstClient);
-    const firstRoomData = waitForSocket(firstClient, 'room-data');
-    firstClient.emit('join-room', {
+    await joinRoom(firstClient, {
       roomId: 'DUPES',
       username: 'Alice',
-      avatar: '🎤',
       userId: 'user-1'
     });
-    await firstRoomData;
 
     const secondClient = await connectClient(server.port);
     clients.push(secondClient);
@@ -144,14 +158,11 @@ test('adding a song broadcasts playlist and persists room data', async () => {
 
   try {
     client = await connectClient(server.port);
-    const roomDataPromise = waitForSocket(client, 'room-data');
-    client.emit('join-room', {
+    await joinRoom(client, {
       roomId: 'SONGS',
       username: 'Alice',
-      avatar: '🎤',
       userId: 'user-1'
     });
-    await roomDataPromise;
 
     const playlistPromise = waitForSocket(client, 'playlist-updated');
     client.emit('add-song', {
@@ -169,6 +180,151 @@ test('adding a song broadcasts playlist and persists room data', async () => {
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
   } finally {
     await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('users cannot delete songs requested by someone else', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'PERMS',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'PERMS',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const alicePlaylistPromise = waitForSocket(alice, 'playlist-updated');
+    const bobPlaylistPromise = waitForSocket(bob, 'playlist-updated');
+    alice.emit('add-song', {
+      title: '青花瓷',
+      singer: '周杰伦',
+      link: ''
+    });
+
+    const [playlist] = await Promise.all([
+      alicePlaylistPromise,
+      bobPlaylistPromise
+    ]);
+    const songId = playlist[0].id;
+
+    const errorPromise = waitForSocket(bob, 'system-message');
+    bob.emit('delete-song', { songId });
+    const errorMessage = await errorPromise;
+
+    assert.equal(errorMessage.type, 'error');
+    assert.equal(server.shareq.roomsData.PERMS.songs.length, 1);
+    assert.equal(server.shareq.roomsData.PERMS.songs[0].id, songId);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('host can delete songs requested by another user', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const host = await connectClient(server.port);
+    const guest = await connectClient(server.port);
+    clients.push(host, guest);
+
+    await joinRoom(host, {
+      roomId: 'ADMIN',
+      username: 'Host',
+      userId: 'host-user'
+    });
+    await joinRoom(guest, {
+      roomId: 'ADMIN',
+      username: 'Guest',
+      userId: 'guest-user'
+    });
+
+    const hostPlaylistPromise = waitForSocket(host, 'playlist-updated');
+    const guestPlaylistPromise = waitForSocket(guest, 'playlist-updated');
+    guest.emit('add-song', {
+      title: 'Guest Song',
+      singer: '',
+      link: ''
+    });
+
+    const [playlist] = await Promise.all([
+      hostPlaylistPromise,
+      guestPlaylistPromise
+    ]);
+    const songId = playlist[0].id;
+
+    const deletePromise = waitForSocket(guest, 'playlist-updated');
+    host.emit('delete-song', { songId });
+    const updatedPlaylist = await deletePromise;
+
+    assert.deepEqual(updatedPlaylist, []);
+    assert.deepEqual(server.shareq.roomsData.ADMIN.songs, []);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('moderators can advance the queue after host promotion', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const host = await connectClient(server.port);
+    const moderator = await connectClient(server.port);
+    clients.push(host, moderator);
+
+    await joinRoom(host, {
+      roomId: 'ROLES',
+      username: 'Host',
+      userId: 'host-user'
+    });
+    await joinRoom(moderator, {
+      roomId: 'ROLES',
+      username: 'Moderator',
+      userId: 'mod-user'
+    });
+
+    const rolesPromise = waitForSocket(moderator, 'roles-updated');
+    host.emit('promote-moderator', { targetUserId: 'mod-user' });
+    const roles = await rolesPromise;
+
+    assert.deepEqual(roles, {
+      hostUserId: 'host-user',
+      moderatorUserIds: ['mod-user']
+    });
+
+    const hostPlaylistPromise = waitForSocket(host, 'playlist-updated');
+    const modPlaylistPromise = waitForSocket(moderator, 'playlist-updated');
+    host.emit('add-song', {
+      title: 'Host Song',
+      singer: '',
+      link: ''
+    });
+    const [playlist] = await Promise.all([
+      hostPlaylistPromise,
+      modPlaylistPromise
+    ]);
+
+    const historyPromise = waitForSocket(host, 'history-updated');
+    moderator.emit('next-song');
+    const history = await historyPromise;
+
+    assert.equal(history.length, 1);
+    assert.equal(history[0].id, playlist[0].id);
+    assert.deepEqual(server.shareq.roomsData.ROLES.songs, []);
+    assert.equal(server.shareq.roomsData.ROLES.alreadySung[0].id, playlist[0].id);
+  } finally {
+    await closeTestServer(server, clients);
   }
 });
 
