@@ -2793,3 +2793,23 @@ body.compact-mode .history-toast-item {
   border: none !important;
   box-shadow: none !important;
 }
+
+/* Specific styles for the '测试服' (Testing Server) badge in lobby/room header */
+.brand-header h1 span {
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body.light-theme .brand-header h1 span {
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.5) !important;
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.room-logo .brand-text span {
+  opacity: 0.5 !important;
+}
+
+body.light-theme .room-logo .brand-text span {
+  color: rgba(0, 0, 0, 0.5) !important;
+  opacity: 0.7 !important;
+}
