@@ -227,58 +227,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const brandTitle = document.querySelector(".brand-title");
   if(brandTitle) brandTitle.innerHTML = 'ShareQ <span style="font-size: 0.4em; opacity: 0.5; font-weight: normal; vertical-align: middle;">测试服</span>';
 
-  // 3. Setup Messages panel
-  const notifSection = document.querySelector(".notifications-section");
-  if(notifSection) {
-    const messagesPanel = document.createElement("div");
-    messagesPanel.id = "messages-panel";
-    messagesPanel.className = "glass-card";
-    messagesPanel.style.padding = "16px";
-    messagesPanel.style.marginBottom = "16px";
-    messagesPanel.innerHTML = `
-      <div class="card-header" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="font-size:1.1rem;"><i class="fa-solid fa-envelope"></i> 消息</h2>
-        <span id="pending-dedications-badge" class="history-badge hidden">0</span>
-      </div>
-      <div id="pending-dedications-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-    `;
-    notifSection.insertBefore(messagesPanel, notifSection.firstChild);
-
-    const toastPanelHeader = document.querySelector("#toast-history-panel .card-header h2");
-    if(toastPanelHeader) toastPanelHeader.innerHTML = '动态';
-
-    const otherFilter = document.querySelector('.toast-filter-btn[data-filter="other"]');
-    if(otherFilter) otherFilter.remove();
-  }
-
-  // 4. Reorganize Now Playing Card
-  const nowPlayingPanel = document.getElementById("now-playing-panel");
-  if(nowPlayingPanel) {
-    nowPlayingPanel.innerHTML = `
-      <div class="playing-header" style="justify-content: flex-end;">
-        <a href="#" target="_blank" id="playing-link-btn" class="accompaniment-btn hidden" title="打开点歌人提供的伴奏链接">
-          <i class="fa-solid fa-up-right-from-square"></i> 打开伴奏链接
-        </a>
-      </div>
-      <div class="playing-content" style="flex-direction: column; align-items: center; text-align: center; gap: 16px; margin-top: -10px;">
-        <div class="playing-icon-wrapper" style="margin-bottom: 8px;">
-          <i id="playing-music-note" class="fa-solid fa-compact-disc playing-music-note-large pulse-glow fa-spin"></i>
-          <img id="playing-avatar-disc" src="" class="playing-avatar-disc hidden" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-secondary); box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); animation: spin 4s linear infinite;">
-        </div>
-        <div class="playing-details" style="display:flex; flex-direction:column; align-items:center; width:100%;">
-          <div class="playing-label" style="margin-bottom: 8px; align-self: center;">
-            <span class="indicator-dot blinking"></span> 正在演唱
-          </div>
-          <h2 id="playing-title" class="playing-title-large" style="font-size: 2.2rem; margin-bottom: 4px;">等待点歌...</h2>
-          <p id="playing-singer" class="playing-singer-large" style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 12px;">--</p>
-          <div class="playing-requester" style="display:flex; align-items:center; justify-content:center; gap:8px;">
-            <span class="badge badge-user" id="playing-user" style="font-size:0.9rem;">--</span>
-            <span id="playing-dedicate-badge" class="badge dedicate-tag hidden" style="font-size:0.8rem;"></span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  // DOM injection code removed as changes are now in index.html
+  updateMessagesEmptyState();
 
   // Generate or Load Persistent User ID (6-digit numeric ID)
   currentUserId = localStorage.getItem("shareq_userid");
@@ -882,10 +832,11 @@ function setupEventListeners() {
   }
 
   // Toast filter tabs
-  document.querySelectorAll(".toast-filter-btn").forEach(btn => {
+  document.querySelectorAll(".toast-filter-link").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      document.querySelectorAll(".toast-filter-btn").forEach(b => b.classList.remove("active"));
+      e.preventDefault();
+      document.querySelectorAll(".toast-filter-link").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       updateToastHistoryUI();
     });
@@ -1098,6 +1049,9 @@ function renderPlaylist() {
     if (window.lastPinnedSongId === song.id) {
       row.classList.add("slide-in-top-anim");
       window.lastPinnedSongId = null;
+      setTimeout(() => {
+        if(row && row.classList) row.classList.remove("slide-in-top-anim");
+      }, 1000);
     }
     
     row.innerHTML = `
@@ -1220,9 +1174,9 @@ function renderHistory() {
     const reactCount = song.reactions || { rose: 0, clap: 0, egg: 0, shoe: 0 };
     
     item.innerHTML = `
-      <div class="song-index-col"><i class="fa-solid fa-circle-check" style="color: var(--color-secondary);"></i></div>
+      <div class="song-index-col">${historyPlaylist.length - i}</div>
       <div class="song-details-col song-single-row">
-        <span class="song-title-text" style="text-decoration: line-through; opacity: 0.6;">${song.title}</span>
+        <span class="song-title-text" style="opacity: 0.6;">${song.title}</span>
         <span class="song-divider">•</span>
         <span class="song-singer-text">${song.singer || '未知歌手'}</span>
         <span class="song-requester-row">
@@ -1231,10 +1185,10 @@ function renderHistory() {
         </span>
         <span class="history-time" style="margin-left: auto; font-size: 0.78rem; opacity: 0.75;"><i class="fa-solid fa-circle-play"></i> 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}</span>
         <div class="playing-reaction-summary" style="margin-top: 4px; width: 100%;">
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">🌹</span> ${reactCount.rose || 0}</span>
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">👏</span> ${reactCount.clap || 0}</span>
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">🥚</span> ${reactCount.egg || 0}</span>
-          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px;"><span class="reaction-emoji">👞</span> ${reactCount.shoe || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">🌹</span> ${reactCount.rose || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">👏</span> ${reactCount.clap || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">🥚</span> ${reactCount.egg || 0}</span>
+          <span class="stat-reaction" style="font-size:0.7rem; padding: 2px 6px; border: none; background: transparent;"><span class="reaction-emoji">👞</span> ${reactCount.shoe || 0}</span>
         </div>
       </div>
     `;
@@ -2050,7 +2004,7 @@ function updateToastHistoryUI() {
   }
 
   // Get active filter
-  const activeBtn = document.querySelector(".toast-filter-btn.active");
+  const activeBtn = document.querySelector(".toast-filter-link.active");
   const filter = activeBtn ? activeBtn.dataset.filter : "all";
 
   list.innerHTML = "";
@@ -2377,6 +2331,25 @@ function updateDedicateSelect() {
 }
 
 // Show the interactive dedication request modal
+function updateMessagesEmptyState() {
+  const list = document.getElementById("pending-dedications-list");
+  if (!list) return;
+  const cards = list.querySelectorAll(".pending-dedication-card");
+  let emptyMsg = document.getElementById("no-messages-msg");
+  if (cards.length === 0) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement("div");
+      emptyMsg.id = "no-messages-msg";
+      emptyMsg.className = "no-history-msg";
+      emptyMsg.textContent = "暂无消息";
+      list.appendChild(emptyMsg);
+    }
+    emptyMsg.style.display = "block";
+  } else {
+    if (emptyMsg) emptyMsg.style.display = "none";
+  }
+}
+
 function showDedicationRequestModal(data) {
   // Add to toast history with type "dedicate" so it appears in the activity feed
   showToast("dedicate", `🎁 ${data.fromUsername} 为你指名点播了《${data.title}》`);
@@ -2401,26 +2374,29 @@ function showDedicationRequestModal(data) {
     </div>
   `;
   list.appendChild(card);
+  updateMessagesEmptyState();
 
   // Update badge count
   const badge = document.getElementById("pending-dedications-badge");
   if (badge) {
-    badge.textContent = list.children.length;
+    badge.textContent = list.querySelectorAll(".pending-dedication-card").length;
     badge.classList.remove("hidden");
   }
 
   card.querySelector(".accept-dedication-btn").addEventListener("click", () => {
     socket.emit("respond-dedication", { id: data.id, accept: true });
     card.remove();
-    if (badge && list.children.length === 0) badge.classList.add("hidden");
-    else if (badge) badge.textContent = list.children.length;
+    updateMessagesEmptyState();
+    if (badge && list.querySelectorAll(".pending-dedication-card").length === 0) badge.classList.add("hidden");
+    else if (badge) badge.textContent = list.querySelectorAll(".pending-dedication-card").length;
   });
 
   card.querySelector(".decline-dedication-btn").addEventListener("click", () => {
     socket.emit("respond-dedication", { id: data.id, accept: false });
     card.remove();
-    if (badge && list.children.length === 0) badge.classList.add("hidden");
-    else if (badge) badge.textContent = list.children.length;
+    updateMessagesEmptyState();
+    if (badge && list.querySelectorAll(".pending-dedication-card").length === 0) badge.classList.add("hidden");
+    else if (badge) badge.textContent = list.querySelectorAll(".pending-dedication-card").length;
   });
 }
 
