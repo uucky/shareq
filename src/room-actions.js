@@ -17,6 +17,7 @@ export function addSong(room, userData, { title, singer, link }, now = Date.now(
     singer,
     link,
     requestedBy: userData.username,
+    requestedByUserId: userData.userId,
     requestedByAvatar: userData.avatar
   });
 
@@ -34,6 +35,7 @@ export function acceptDedication(room, dedication, requestedByAvatar, now = Date
     singer: dedication.singer,
     link: dedication.link,
     requestedBy: dedication.targetUsername,
+    requestedByUserId: dedication.targetUserId,
     requestedByAvatar,
     dedicatedBy: dedication.fromUsername
   });
@@ -106,7 +108,7 @@ export function shufflePlaylist(room, { random = Math.random, now = Date.now() }
 
 export function advanceQueue(room, userData, now = Date.now()) {
   const currentSong = room.songs[0];
-  const isCurrentSongOwner = currentSong && currentSong.requestedBy === userData.username;
+  const isCurrentSongOwner = currentSong && currentSong.requestedByUserId === userData.userId;
 
   if (!canManageQueue(userData, room) && !isCurrentSongOwner) {
     return { changed: false, reason: 'forbidden' };

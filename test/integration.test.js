@@ -7,6 +7,7 @@ import { clearTimeout, setTimeout } from 'node:timers';
 import { io as createClient } from 'socket.io-client';
 
 import { createShareQServer } from '../src/app.js';
+import { addSong } from '../src/room-actions.js';
 import { createReactions, getOrCreateRoom, pushHistory, redoAction, undoAction } from '../src/rooms.js';
 import { createSaveData, loadRooms } from '../src/storage.js';
 
@@ -203,6 +204,81 @@ test('malformed join-room payload is rejected without creating a room', async ()
   }
 });
 
+test('join-room rejects invalid bounded fields without creating a room', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    const invalidRoomPromise = waitForSocket(client, 'join-failed');
+    client.emit('join-room', {
+      roomId: 'BAD_ROOM',
+      username: 'Alice',
+      avatar: '🎤',
+      userId: 'user-1'
+    });
+
+    const invalidRoomFailure = await invalidRoomPromise;
+    assert.match(invalidRoomFailure.message, /房间号/);
+    assert.deepEqual(server.shareq.roomsData, {});
+    assert.equal(server.shareq.activeConnections.size, 0);
+
+    const overlongAvatarPromise = waitForSocket(client, 'join-failed');
+    client.emit('join-room', {
+      roomId: 'VALID1',
+      username: 'Alice',
+      avatar: 'x'.repeat(64 * 1024 + 1),
+      userId: 'user-1'
+    });
+
+    const overlongAvatarFailure = await overlongAvatarPromise;
+    assert.match(overlongAvatarFailure.message, /房间号/);
+    assert.deepEqual(server.shareq.roomsData, {});
+    assert.equal(server.shareq.activeConnections.size, 0);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('update-profile rejects invalid bounded fields without mutating connection data', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'PROFILE',
+      username: 'Alice',
+      userId: 'user-1',
+      avatar: '🎤'
+    });
+
+    const errorPromise = waitForSocket(client, 'system-message');
+    client.emit('update-profile', {
+      username: 'A'.repeat(31),
+      avatar: '🎸'
+    });
+
+    const errorMessage = await errorPromise;
+    assert.equal(errorMessage.type, 'error');
+    assert.equal(server.shareq.activeConnections.get(client.id).username, 'Alice');
+    assert.equal(server.shareq.activeConnections.get(client.id).avatar, '🎤');
+
+    const avatarErrorPromise = waitForSocket(client, 'system-message');
+    client.emit('update-profile', {
+      username: 'Alice',
+      avatar: 'x'.repeat(64 * 1024 + 1)
+    });
+
+    const avatarErrorMessage = await avatarErrorPromise;
+    assert.equal(avatarErrorMessage.type, 'error');
+    assert.equal(server.shareq.activeConnections.get(client.id).username, 'Alice');
+    assert.equal(server.shareq.activeConnections.get(client.id).avatar, '🎤');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
 test('adding a song broadcasts playlist and persists room data', async () => {
   const server = await createTestServer();
   let client;
@@ -226,9 +302,60 @@ test('adding a song broadcasts playlist and persists room data', async () => {
     assert.equal(playlist.length, 1);
     assert.equal(playlist[0].title, '七里香');
     assert.equal(playlist[0].requestedBy, 'Alice');
+    assert.equal(playlist[0].requestedByUserId, 'user-1');
 
     const savedRooms = loadRooms(server.shareq.databaseFile, silentLogger);
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
+    assert.equal(savedRooms.SONGS.songs[0].requestedByUserId, 'user-1');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('add-song rejects overlong fields and non-http links without mutating the queue', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'VALIDATE',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const invalidLinkPromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: 'ftp://example.com/song'
+    });
+    const invalidLinkError = await invalidLinkPromise;
+
+    assert.equal(invalidLinkError.type, 'error');
+    assert.equal(server.shareq.roomsData.VALIDATE.songs.length, 0);
+
+    const overlongTitlePromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: 'A'.repeat(121),
+      singer: '周杰伦',
+      link: ''
+    });
+    const overlongTitleError = await overlongTitlePromise;
+
+    assert.equal(overlongTitleError.type, 'error');
+    assert.equal(server.shareq.roomsData.VALIDATE.songs.length, 0);
+
+    const overlongSingerPromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: 'A'.repeat(81),
+      link: ''
+    });
+    const overlongSingerError = await overlongSingerPromise;
+
+    assert.equal(overlongSingerError.type, 'error');
+    assert.equal(server.shareq.roomsData.VALIDATE.songs.length, 0);
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }
@@ -324,6 +451,43 @@ test('add-song rejects empty and invalid payloads without mutating the queue', a
   }
 });
 
+test('add-song cooldown rejects rapid duplicate submissions from the same socket', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'ADDSPAM',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const firstPlaylistPromise = waitForSocket(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: 'First',
+      singer: '',
+      link: ''
+    });
+    await firstPlaylistPromise;
+
+    const errorPromise = waitForSocket(client, 'system-message');
+    const noPlaylistPromise = waitForNoSocketEvent(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: 'Second',
+      singer: '',
+      link: ''
+    });
+    const [errorMessage] = await Promise.all([errorPromise, noPlaylistPromise]);
+
+    assert.equal(errorMessage.type, 'error');
+    assert.equal(server.shareq.roomsData.ADDSPAM.songs.length, 1);
+    assert.equal(server.shareq.roomsData.ADDSPAM.songs[0].title, 'First');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
 test('invalid reaction types do not update playlist or trigger effects', async () => {
   const server = await createTestServer();
   let client;
@@ -352,6 +516,47 @@ test('invalid reaction types do not update playlist or trigger effects', async (
     const reactions = server.shareq.roomsData.REACTIONS.songs[0].reactions;
     assert.deepEqual(reactions, createReactions());
     assert.equal(Object.hasOwn(reactions, 'tomato'), false);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('send-reaction cooldown drops rapid duplicate reactions from the same socket', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'REACTSPAM',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const addPlaylistPromise = waitForSocket(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: ''
+    });
+    await addPlaylistPromise;
+
+    const firstPlaylistPromise = waitForSocket(client, 'playlist-updated');
+    const firstEffectPromise = waitForSocket(client, 'trigger-reaction-effect');
+    client.emit('send-reaction', { type: 'rose' });
+    await Promise.all([firstPlaylistPromise, firstEffectPromise]);
+
+    const noPlaylistPromise = waitForNoSocketEvent(client, 'playlist-updated');
+    const noEffectPromise = waitForNoSocketEvent(client, 'trigger-reaction-effect');
+    client.emit('send-reaction', { type: 'rose' });
+    await Promise.all([noPlaylistPromise, noEffectPromise]);
+
+    assert.deepEqual(server.shareq.roomsData.REACTSPAM.songs[0].reactions, {
+      rose: 1,
+      clap: 0,
+      egg: 0,
+      shoe: 0
+    });
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }
@@ -390,6 +595,19 @@ test('dedicate-song rejects invalid payloads without creating pending dedication
     assert.equal(server.shareq.pendingDedications.size, 0);
     assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
 
+    const invalidLinkPromise = waitForSocket(alice, 'dedication-failed');
+    alice.emit('dedicate-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: 'javascript:alert(1)',
+      targetUserId: 'user-2'
+    });
+    const invalidLinkFailure = await invalidLinkPromise;
+
+    assert.match(invalidLinkFailure.message, /指名点歌/);
+    assert.equal(server.shareq.pendingDedications.size, 0);
+    assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
+
     const malformedPromise = waitForSocket(alice, 'dedication-failed');
     alice.emit('dedicate-song', null);
     const malformedFailure = await malformedPromise;
@@ -397,6 +615,52 @@ test('dedicate-song rejects invalid payloads without creating pending dedication
     assert.match(malformedFailure.message, /指名点歌/);
     assert.equal(server.shareq.pendingDedications.size, 0);
     assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('dedicate-song cooldown rejects rapid duplicate requests from the same socket', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'DEDISPAM',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'DEDISPAM',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const firstPendingPromise = waitForSocket(alice, 'dedication-pending');
+    alice.emit('dedicate-song', {
+      title: 'First',
+      singer: '',
+      link: '',
+      targetUserId: 'user-2'
+    });
+    await firstPendingPromise;
+    assert.equal(server.shareq.pendingDedications.size, 1);
+
+    const cooldownPromise = waitForSocket(alice, 'dedication-failed');
+    alice.emit('dedicate-song', {
+      title: 'Second',
+      singer: '',
+      link: '',
+      targetUserId: 'user-2'
+    });
+    const cooldownFailure = await cooldownPromise;
+
+    assert.match(cooldownFailure.message, /频繁/);
+    assert.equal(server.shareq.pendingDedications.size, 1);
   } finally {
     await closeTestServer(server, clients);
   }
@@ -445,6 +709,136 @@ test('users cannot delete songs requested by someone else', async () => {
   }
 });
 
+test('song delete ownership follows user ID after profile renames', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'OWNER',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'OWNER',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const alicePlaylistPromise = waitForSocket(alice, 'playlist-updated');
+    const bobPlaylistPromise = waitForSocket(bob, 'playlist-updated');
+    alice.emit('add-song', {
+      title: '青花瓷',
+      singer: '周杰伦',
+      link: ''
+    });
+
+    const [playlist] = await Promise.all([alicePlaylistPromise, bobPlaylistPromise]);
+    const songId = playlist[0].id;
+    assert.equal(playlist[0].requestedByUserId, 'user-1');
+
+    const bobRenamePromise = waitForSocketMatching(
+      bob,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-2' && user.username === 'Alice')
+    );
+    bob.emit('update-profile', { username: 'Alice', avatar: '🎤' });
+    await bobRenamePromise;
+
+    const forbiddenPromise = waitForSocket(bob, 'system-message');
+    bob.emit('delete-song', { songId });
+    const forbiddenMessage = await forbiddenPromise;
+
+    assert.equal(forbiddenMessage.type, 'error');
+    assert.equal(server.shareq.roomsData.OWNER.songs.length, 1);
+
+    const aliceRenamePromise = waitForSocketMatching(
+      alice,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-1' && user.username === 'Carol')
+    );
+    alice.emit('update-profile', { username: 'Carol', avatar: '🎤' });
+    await aliceRenamePromise;
+
+    const deletePromise = waitForSocket(alice, 'playlist-updated');
+    alice.emit('delete-song', { songId });
+    const updatedPlaylist = await deletePromise;
+
+    assert.deepEqual(updatedPlaylist, []);
+    assert.deepEqual(server.shareq.roomsData.OWNER.songs, []);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('current singer skip permission follows user ID after profile renames', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'SINGER',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'SINGER',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const alicePlaylistPromise = waitForSocket(alice, 'playlist-updated');
+    const bobPlaylistPromise = waitForSocket(bob, 'playlist-updated');
+    alice.emit('add-song', {
+      title: '稻香',
+      singer: '周杰伦',
+      link: ''
+    });
+    const [playlist] = await Promise.all([alicePlaylistPromise, bobPlaylistPromise]);
+    assert.equal(playlist[0].requestedByUserId, 'user-1');
+
+    const bobRenamePromise = waitForSocketMatching(
+      bob,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-2' && user.username === 'Alice')
+    );
+    bob.emit('update-profile', { username: 'Alice', avatar: '🎤' });
+    await bobRenamePromise;
+
+    const noHistoryPromise = waitForNoSocketEvent(bob, 'history-updated');
+    bob.emit('next-song');
+    await noHistoryPromise;
+    assert.equal(server.shareq.roomsData.SINGER.songs.length, 1);
+    assert.equal(server.shareq.roomsData.SINGER.alreadySung.length, 0);
+
+    const aliceRenamePromise = waitForSocketMatching(
+      alice,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-1' && user.username === 'Carol')
+    );
+    alice.emit('update-profile', { username: 'Carol', avatar: '🎤' });
+    await aliceRenamePromise;
+
+    const historyPromise = waitForSocket(alice, 'history-updated');
+    alice.emit('next-song');
+    const history = await historyPromise;
+
+    assert.equal(history.length, 1);
+    assert.equal(history[0].id, playlist[0].id);
+    assert.equal(server.shareq.roomsData.SINGER.songs.length, 0);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
 test('host can delete songs requested by another user', async () => {
   const server = await createTestServer();
   const clients = [];
@@ -482,6 +876,60 @@ test('host can delete songs requested by another user', async () => {
 
     assert.deepEqual(updatedPlaylist, []);
     assert.deepEqual(server.shareq.roomsData.ADMIN.songs, []);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('guests cannot shuffle the playlist by emitting the socket event directly', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const host = await connectClient(server.port);
+    const guest = await connectClient(server.port);
+    clients.push(host, guest);
+
+    await joinRoom(host, {
+      roomId: 'SHUFFLE',
+      username: 'Host',
+      userId: 'host-user'
+    });
+    await joinRoom(guest, {
+      roomId: 'SHUFFLE',
+      username: 'Guest',
+      userId: 'guest-user'
+    });
+
+    const room = server.shareq.roomsData.SHUFFLE;
+    for (const title of ['One', 'Two', 'Three']) {
+      addSong(
+        room,
+        {
+          username: 'Host',
+          userId: 'host-user',
+          avatar: '🎤'
+        },
+        {
+          title,
+          singer: '',
+          link: ''
+        }
+      );
+    }
+
+    const originalOrder = room.songs.map((song) => song.id);
+    const errorPromise = waitForSocket(guest, 'system-message');
+    const noPlaylistPromise = waitForNoSocketEvent(host, 'playlist-updated');
+    guest.emit('shuffle-playlist');
+    const [errorMessage] = await Promise.all([errorPromise, noPlaylistPromise]);
+
+    assert.equal(errorMessage.type, 'error');
+    assert.deepEqual(
+      room.songs.map((song) => song.id),
+      originalOrder
+    );
+    assert.equal(room.historyStack.length, 3);
   } finally {
     await closeTestServer(server, clients);
   }
@@ -559,6 +1007,7 @@ test('playlist history supports undo and redo', () => {
     singer: '',
     link: '',
     requestedBy: 'Alice',
+    requestedByUserId: 'user-1',
     requestedByAvatar: '🎤',
     prioritized: false,
     reactions: createReactions(),
@@ -572,6 +1021,7 @@ test('playlist history supports undo and redo', () => {
     singer: '',
     link: '',
     requestedBy: 'Bob',
+    requestedByUserId: 'user-2',
     requestedByAvatar: '🎤',
     prioritized: false,
     reactions: createReactions(),

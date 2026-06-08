@@ -45,7 +45,7 @@ function createRunId() {
 }
 
 function createUserId(offset) {
-  return String(100_000 + offset);
+  return `00000000-0000-4000-8000-${String(offset).padStart(12, '0')}`;
 }
 
 function contextOptionsForProject(projectUse) {
@@ -386,7 +386,7 @@ test('queue advancement syncs now playing and history state', async ({ browser, 
     contexts.push(userBSession.context);
 
     await requestFirstSong(page, firstSong);
-    await submitSong(page, secondSong);
+    await submitSong(userBSession.page, secondSong);
     await expect(page.locator('#song-count-badge')).toHaveText('2 首');
     await expect(userBSession.page.locator('#song-count-badge')).toHaveText('2 首');
 

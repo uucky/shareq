@@ -21,6 +21,12 @@ const hostUser = { userId: 'host-user', username: 'Host', avatar: 'mic' };
 const moderatorUser = { userId: 'mod-user', username: 'Mod', avatar: 'mic' };
 const aliceUser = { userId: 'alice-user', username: 'Alice', avatar: 'mic' };
 const bobUser = { userId: 'bob-user', username: 'Bob', avatar: 'mic' };
+const userIdsByName = {
+  Alice: aliceUser.userId,
+  Bob: bobUser.userId,
+  Host: hostUser.userId,
+  Mod: moderatorUser.userId
+};
 
 function createRoom(overrides = {}) {
   return {
@@ -43,6 +49,7 @@ function createSong(id, requestedBy = 'Alice', overrides = {}) {
     singer: '',
     link: '',
     requestedBy,
+    requestedByUserId: userIdsByName[requestedBy] || `${requestedBy.toLowerCase()}-user`,
     requestedByAvatar: 'mic',
     prioritized: false,
     reactions: createReactions(),
@@ -89,6 +96,30 @@ test('deleteSong allows host and moderators to delete another user song', () => 
   assert.equal(moderatorResult.song.id, 'mod-delete');
   assert.deepEqual(moderatorRoom.songs, []);
   assert.equal(moderatorRoom.updatedAt, 3);
+});
+
+test('deleteSong uses requester user ID instead of mutable username', () => {
+  const room = createRoom({
+    songs: [createSong('song-1', 'Alice')]
+  });
+  const renamedAlice = { ...aliceUser, username: 'Carol' };
+  const renamedBob = { ...bobUser, username: 'Alice' };
+
+  const forbiddenResult = deleteSong(room, renamedBob, 'song-1', 2);
+
+  assert.deepEqual(forbiddenResult, {
+    changed: false,
+    reason: 'forbidden',
+    song: room.songs[0]
+  });
+  assert.equal(room.songs.length, 1);
+
+  const allowedResult = deleteSong(room, renamedAlice, 'song-1', 3);
+
+  assert.equal(allowedResult.changed, true);
+  assert.equal(allowedResult.song.id, 'song-1');
+  assert.deepEqual(room.songs, []);
+  assert.equal(room.updatedAt, 3);
 });
 
 test('prioritizeSong moves a queued song directly after now playing', () => {
@@ -183,6 +214,31 @@ test('advanceQueue moves current song to sung history and initializes reactions'
     ['current']
   );
   assert.equal(room.updatedAt, 100);
+});
+
+test('advanceQueue allows only the current song requester by user ID', () => {
+  const room = createRoom({
+    songs: [createSong('current', 'Alice'), createSong('next', 'Bob')]
+  });
+  const renamedBob = { ...bobUser, username: 'Alice' };
+  const renamedAlice = { ...aliceUser, username: 'Carol' };
+
+  const forbiddenResult = advanceQueue(room, renamedBob, 100);
+
+  assert.deepEqual(forbiddenResult, { changed: false, reason: 'forbidden' });
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['current', 'next']
+  );
+
+  const allowedResult = advanceQueue(room, renamedAlice, 200);
+
+  assert.equal(allowedResult.changed, true);
+  assert.equal(allowedResult.song.id, 'current');
+  assert.deepEqual(
+    room.songs.map((song) => song.id),
+    ['next']
+  );
 });
 
 test('restorePreviousSong moves latest sung song back and resets reactions', () => {

@@ -52,12 +52,17 @@ function normalizeSong(song, fieldName) {
     throw new Error(`${fieldName}.title is required`);
   }
 
+  if (!song.requestedByUserId) {
+    throw new Error(`${fieldName}.requestedByUserId is required`);
+  }
+
   const normalized = {
     id: String(song.id),
     title: String(song.title),
     singer: String(song.singer || ''),
     link: String(song.link || ''),
     requestedBy: String(song.requestedBy || ''),
+    requestedByUserId: String(song.requestedByUserId),
     requestedByAvatar: String(song.requestedByAvatar || ''),
     prioritized: Boolean(song.prioritized),
     reactions: normalizeReactions(song.reactions, `${fieldName}.reactions`)
