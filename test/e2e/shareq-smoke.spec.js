@@ -45,7 +45,7 @@ function createRunId() {
 }
 
 function createUserId(offset) {
-  return String(100_000 + offset);
+  return `00000000-0000-4000-8000-${String(offset).padStart(12, '0')}`;
 }
 
 function contextOptionsForProject(projectUse) {

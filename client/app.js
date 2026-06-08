@@ -17,16 +17,47 @@ import { initializeSocketHandlers } from './js/socket-handlers.js';
 import { setupEventListeners } from './js/events.js';
 
 const COMMIT_URL_BASE = 'https://github.com/uucky/shareq/commit/';
+const USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function createUuidFromRandomValues() {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi || typeof cryptoApi.getRandomValues !== 'function') {
+    throw new Error('Secure random API unavailable');
+  }
+
+  const bytes = new Uint8Array(16);
+  cryptoApi.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex
+    .slice(8, 10)
+    .join('')}-${hex.slice(10, 16).join('')}`;
+}
+
+function createUserId() {
+  const cryptoApi = globalThis.crypto;
+  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+    return cryptoApi.randomUUID();
+  }
+
+  return createUuidFromRandomValues();
+}
+
+function isValidUserId(userId) {
+  return typeof userId === 'string' && USER_ID_PATTERN.test(userId);
+}
 
 // Initialize Elements
 document.addEventListener('DOMContentLoaded', () => {
   renderAppVersion();
   updateMessagesEmptyState();
 
-  // Generate or Load Persistent User ID (6-digit numeric ID)
+  // Generate or load persistent browser user ID.
   state.currentUserId = localStorage.getItem('shareq_userid');
-  if (!state.currentUserId) {
-    state.currentUserId = Math.floor(100000 + Math.random() * 900000).toString();
+  if (!isValidUserId(state.currentUserId)) {
+    state.currentUserId = createUserId();
     localStorage.setItem('shareq_userid', state.currentUserId);
   }
 
@@ -205,7 +236,7 @@ function renderSuggestions() {
 function updateWidgetUI() {
   document.getElementById('user-widget-name').textContent = state.currentUsername;
   setAvatarElement(document.getElementById('user-widget-avatar'), state.currentAvatar);
-  document.getElementById('user-widget-id').textContent = `ID: ${state.currentUserId}`;
+  document.getElementById('user-widget-id').textContent = `ID: ${formatUserId(state.currentUserId)}`;
 
   // Admin visibility setup
   const isAdmin =
@@ -651,7 +682,7 @@ function renderMembers() {
         memberName,
         createElement('div', {
           className: 'member-id-label',
-          text: `ID: ${u.userId}`
+          text: `ID: ${formatUserId(u.userId)}`
         })
       ])
     ]);
@@ -968,7 +999,7 @@ function updateDedicateSelect() {
     if (u.userId !== state.currentUserId) {
       const opt = document.createElement('option');
       opt.value = u.userId;
-      opt.textContent = `${u.username} (ID: ${u.userId})`;
+      opt.textContent = `${u.username} (ID: ${formatUserId(u.userId)})`;
       select.appendChild(opt);
     }
   });
@@ -985,4 +1016,8 @@ function formatUsername(name) {
     return displayName.substring(0, 3) + '...' + displayName.substring(displayName.length - 3);
   }
   return displayName;
+}
+
+function formatUserId(userId) {
+  return String(userId || '').slice(0, 8) || '--';
 }
