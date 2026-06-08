@@ -96,6 +96,19 @@ npm run build
 npm start
 ```
 
+## 💾 数据持久化
+
+ShareQ 默认将 SQLite 数据库写入 `data/shareq.sqlite`。生产部署时需要把 `data/` 目录放在持久化磁盘或 Docker volume 上；`docker-compose.example.yml` 已经将本机 `./data` 挂载到容器内 `/app/data`。
+
+如需自定义路径，可以设置：
+
+```bash
+DATA_DIR=/path/to/data
+DATABASE_FILE=/path/to/shareq.sqlite
+```
+
+`DATABASE_FILE` 优先级高于 `DATA_DIR`。
+
 完整检查：
 
 ```bash
