@@ -20,21 +20,33 @@ const INVALID_REQUEST_MESSAGE = '请求参数无效，请刷新后重试';
 const INVALID_JOIN_MESSAGE = '房间号、昵称或用户 ID 无效，请检查后重试';
 const INVALID_SONG_MESSAGE = '点歌信息无效，请填写歌曲名称';
 const INVALID_DEDICATION_MESSAGE = '指名点歌信息无效';
+const MAX_ROOM_ID_LENGTH = 12;
+const MAX_USERNAME_LENGTH = 30;
+const MAX_USER_ID_LENGTH = 64;
+const MAX_SONG_TITLE_LENGTH = 120;
+const MAX_SINGER_LENGTH = 80;
+const MAX_LINK_LENGTH = 500;
+const MAX_AVATAR_LENGTH = 64 * 1024;
+const ROOM_ID_PATTERN = /^[A-Z0-9]+$/;
 
 function isPayloadObject(payload) {
   return payload !== null && typeof payload === 'object' && !Array.isArray(payload);
 }
 
-function normalizeRequiredString(value) {
+function normalizeRequiredString(value, maxLength) {
   if (typeof value !== 'string') {
     return null;
   }
 
   const trimmedValue = value.trim();
-  return trimmedValue === '' ? null : trimmedValue;
+  if (trimmedValue === '' || trimmedValue.length > maxLength) {
+    return null;
+  }
+
+  return trimmedValue;
 }
 
-function normalizeOptionalString(value) {
+function normalizeOptionalString(value, maxLength) {
   if (value === undefined || value === null) {
     return '';
   }
@@ -43,7 +55,8 @@ function normalizeOptionalString(value) {
     return null;
   }
 
-  return value.trim();
+  const trimmedValue = value.trim();
+  return trimmedValue.length > maxLength ? null : trimmedValue;
 }
 
 function normalizeAvatar(value) {
@@ -52,7 +65,24 @@ function normalizeAvatar(value) {
   }
 
   const trimmedValue = value.trim();
+  if (trimmedValue.length > MAX_AVATAR_LENGTH) {
+    return null;
+  }
+
   return trimmedValue === '' ? DEFAULT_AVATAR : trimmedValue;
+}
+
+function isValidHttpLink(link) {
+  if (link === '') {
+    return true;
+  }
+
+  try {
+    const url = new URL(link);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 function validateJoinPayload(payload) {
@@ -60,17 +90,23 @@ function validateJoinPayload(payload) {
     return null;
   }
 
-  const roomId = normalizeRequiredString(payload.roomId);
-  const username = normalizeRequiredString(payload.username);
-  const userId = normalizeRequiredString(payload.userId);
-  if (!roomId || !username || !userId) {
+  const roomId = normalizeRequiredString(payload.roomId, MAX_ROOM_ID_LENGTH);
+  const username = normalizeRequiredString(payload.username, MAX_USERNAME_LENGTH);
+  const userId = normalizeRequiredString(payload.userId, MAX_USER_ID_LENGTH);
+  const avatar = normalizeAvatar(payload.avatar);
+  if (!roomId || !username || !userId || !avatar) {
+    return null;
+  }
+
+  const normalizedRoomId = normalizeRoomId(roomId);
+  if (!ROOM_ID_PATTERN.test(normalizedRoomId)) {
     return null;
   }
 
   return {
-    roomId: normalizeRoomId(roomId),
+    roomId: normalizedRoomId,
     username,
-    avatar: normalizeAvatar(payload.avatar),
+    avatar,
     userId
   };
 }
@@ -80,14 +116,15 @@ function validateProfilePayload(payload) {
     return null;
   }
 
-  const username = normalizeRequiredString(payload.username);
-  if (!username) {
+  const username = normalizeRequiredString(payload.username, MAX_USERNAME_LENGTH);
+  const avatar = normalizeAvatar(payload.avatar);
+  if (!username || !avatar) {
     return null;
   }
 
   return {
     username,
-    avatar: normalizeAvatar(payload.avatar)
+    avatar
   };
 }
 
@@ -96,10 +133,10 @@ function validateSongPayload(payload) {
     return null;
   }
 
-  const title = normalizeRequiredString(payload.title);
-  const singer = normalizeOptionalString(payload.singer);
-  const link = normalizeOptionalString(payload.link);
-  if (!title || singer === null || link === null) {
+  const title = normalizeRequiredString(payload.title, MAX_SONG_TITLE_LENGTH);
+  const singer = normalizeOptionalString(payload.singer, MAX_SINGER_LENGTH);
+  const link = normalizeOptionalString(payload.link, MAX_LINK_LENGTH);
+  if (!title || singer === null || link === null || !isValidHttpLink(link)) {
     return null;
   }
 
@@ -111,7 +148,7 @@ function validateStringIdPayload(payload, key) {
     return null;
   }
 
-  return normalizeRequiredString(payload[key]);
+  return normalizeRequiredString(payload[key], MAX_USER_ID_LENGTH);
 }
 
 function validateDedicationPayload(payload) {

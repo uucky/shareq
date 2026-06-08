@@ -203,6 +203,81 @@ test('malformed join-room payload is rejected without creating a room', async ()
   }
 });
 
+test('join-room rejects invalid bounded fields without creating a room', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    const invalidRoomPromise = waitForSocket(client, 'join-failed');
+    client.emit('join-room', {
+      roomId: 'BAD_ROOM',
+      username: 'Alice',
+      avatar: '🎤',
+      userId: 'user-1'
+    });
+
+    const invalidRoomFailure = await invalidRoomPromise;
+    assert.match(invalidRoomFailure.message, /房间号/);
+    assert.deepEqual(server.shareq.roomsData, {});
+    assert.equal(server.shareq.activeConnections.size, 0);
+
+    const overlongAvatarPromise = waitForSocket(client, 'join-failed');
+    client.emit('join-room', {
+      roomId: 'VALID1',
+      username: 'Alice',
+      avatar: 'x'.repeat(64 * 1024 + 1),
+      userId: 'user-1'
+    });
+
+    const overlongAvatarFailure = await overlongAvatarPromise;
+    assert.match(overlongAvatarFailure.message, /房间号/);
+    assert.deepEqual(server.shareq.roomsData, {});
+    assert.equal(server.shareq.activeConnections.size, 0);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('update-profile rejects invalid bounded fields without mutating connection data', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'PROFILE',
+      username: 'Alice',
+      userId: 'user-1',
+      avatar: '🎤'
+    });
+
+    const errorPromise = waitForSocket(client, 'system-message');
+    client.emit('update-profile', {
+      username: 'A'.repeat(31),
+      avatar: '🎸'
+    });
+
+    const errorMessage = await errorPromise;
+    assert.equal(errorMessage.type, 'error');
+    assert.equal(server.shareq.activeConnections.get(client.id).username, 'Alice');
+    assert.equal(server.shareq.activeConnections.get(client.id).avatar, '🎤');
+
+    const avatarErrorPromise = waitForSocket(client, 'system-message');
+    client.emit('update-profile', {
+      username: 'Alice',
+      avatar: 'x'.repeat(64 * 1024 + 1)
+    });
+
+    const avatarErrorMessage = await avatarErrorPromise;
+    assert.equal(avatarErrorMessage.type, 'error');
+    assert.equal(server.shareq.activeConnections.get(client.id).username, 'Alice');
+    assert.equal(server.shareq.activeConnections.get(client.id).avatar, '🎤');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
 test('adding a song broadcasts playlist and persists room data', async () => {
   const server = await createTestServer();
   let client;
@@ -229,6 +304,55 @@ test('adding a song broadcasts playlist and persists room data', async () => {
 
     const savedRooms = loadRooms(server.shareq.databaseFile, silentLogger);
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('add-song rejects overlong fields and non-http links without mutating the queue', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'VALIDATE',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const invalidLinkPromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: 'ftp://example.com/song'
+    });
+    const invalidLinkError = await invalidLinkPromise;
+
+    assert.equal(invalidLinkError.type, 'error');
+    assert.equal(server.shareq.roomsData.VALIDATE.songs.length, 0);
+
+    const overlongTitlePromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: 'A'.repeat(121),
+      singer: '周杰伦',
+      link: ''
+    });
+    const overlongTitleError = await overlongTitlePromise;
+
+    assert.equal(overlongTitleError.type, 'error');
+    assert.equal(server.shareq.roomsData.VALIDATE.songs.length, 0);
+
+    const overlongSingerPromise = waitForSocket(client, 'system-message');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: 'A'.repeat(81),
+      link: ''
+    });
+    const overlongSingerError = await overlongSingerPromise;
+
+    assert.equal(overlongSingerError.type, 'error');
+    assert.equal(server.shareq.roomsData.VALIDATE.songs.length, 0);
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }
@@ -387,6 +511,19 @@ test('dedicate-song rejects invalid payloads without creating pending dedication
     const emptyTitleFailure = await emptyTitlePromise;
 
     assert.match(emptyTitleFailure.message, /指名点歌/);
+    assert.equal(server.shareq.pendingDedications.size, 0);
+    assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
+
+    const invalidLinkPromise = waitForSocket(alice, 'dedication-failed');
+    alice.emit('dedicate-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: 'javascript:alert(1)',
+      targetUserId: 'user-2'
+    });
+    const invalidLinkFailure = await invalidLinkPromise;
+
+    assert.match(invalidLinkFailure.message, /指名点歌/);
     assert.equal(server.shareq.pendingDedications.size, 0);
     assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
 
