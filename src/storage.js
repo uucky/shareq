@@ -3,7 +3,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 const EMPTY_ROOM_EXPIRY_MS = 48 * 60 * 60 * 1000;
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const QUEUED_LIST = 'queued';
 const SUNG_LIST = 'sung';
 
@@ -49,6 +49,7 @@ export function initializeSchema(db) {
       singer TEXT NOT NULL DEFAULT '',
       link TEXT NOT NULL DEFAULT '',
       requested_by TEXT NOT NULL DEFAULT '',
+      requested_by_user_id TEXT NOT NULL,
       requested_by_avatar TEXT NOT NULL DEFAULT '',
       dedicated_by TEXT,
       prioritized INTEGER NOT NULL DEFAULT 0,
@@ -140,6 +141,7 @@ function createSongFromRow(row) {
     singer: row.singer,
     link: row.link,
     requestedBy: row.requested_by,
+    requestedByUserId: row.requested_by_user_id,
     requestedByAvatar: row.requested_by_avatar,
     prioritized: Boolean(row.prioritized),
     reactions: {
@@ -206,6 +208,7 @@ export function loadRooms(databaseFile, logger = console) {
         singer,
         link,
         requested_by,
+        requested_by_user_id,
         requested_by_avatar,
         dedicated_by,
         prioritized,
@@ -289,6 +292,10 @@ function runInTransaction(db, callback) {
 }
 
 function saveSong(insertSong, roomId, listType, position, song) {
+  if (!song.requestedByUserId) {
+    throw new Error(`song ${song.id || '(unknown)'} is missing requestedByUserId`);
+  }
+
   const reactions = getReactions(song);
   insertSong.run(
     String(song.id),
@@ -299,6 +306,7 @@ function saveSong(insertSong, roomId, listType, position, song) {
     String(song.singer || ''),
     String(song.link || ''),
     String(song.requestedBy || ''),
+    String(song.requestedByUserId || ''),
     String(song.requestedByAvatar || ''),
     song.dedicatedBy ? String(song.dedicatedBy) : null,
     song.prioritized ? 1 : 0,
@@ -342,6 +350,7 @@ export function saveRooms(
         singer,
         link,
         requested_by,
+        requested_by_user_id,
         requested_by_avatar,
         dedicated_by,
         prioritized,
@@ -352,7 +361,7 @@ export function saveRooms(
         egg,
         shoe
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     runInTransaction(db, () => {

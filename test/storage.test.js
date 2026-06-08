@@ -23,6 +23,7 @@ function createSong(id, overrides = {}) {
     singer: '',
     link: '',
     requestedBy: 'Alice',
+    requestedByUserId: 'alice-user',
     requestedByAvatar: '🎤',
     prioritized: false,
     reactions: {
@@ -103,6 +104,7 @@ test('SQLite storage round trips rooms, songs, reactions, and roles', () => {
             singer: 'Queued Singer',
             link: 'https://example.com/queued',
             requestedBy: 'Alice',
+            requestedByUserId: 'alice-user',
             requestedByAvatar: '🎸',
             dedicatedBy: 'Bob',
             prioritized: true,
@@ -122,6 +124,7 @@ test('SQLite storage round trips rooms, songs, reactions, and roles', () => {
             singer: '',
             link: '',
             requestedBy: 'Alice',
+            requestedByUserId: 'alice-user',
             requestedByAvatar: '🎤',
             prioritized: false,
             reactions: {
@@ -214,6 +217,7 @@ test('JSON to SQLite migration imports rooms and refuses accidental overwrite', 
 
     const migratedRooms = loadRooms(databaseFile, silentLogger);
     assert.equal(migratedRooms.MIGR8.songs[0].title, 'Migrated Song');
+    assert.equal(migratedRooms.MIGR8.songs[0].requestedByUserId, 'alice-user');
     assert.equal(migratedRooms.MIGR8.hostUserId, 'host-user');
     assert.deepEqual(migratedRooms.MIGR8.moderatorUserIds, ['mod-user']);
 

@@ -231,7 +231,7 @@ function updateWidgetUI() {
   // Visible to: admins, AND the person whose song is currently playing
   const nextBtn = document.getElementById('next-btn');
   const currentlyPlayingSong = state.playlist.length > 0 ? state.playlist[0] : null;
-  const isCurrentSongMine = currentlyPlayingSong && currentlyPlayingSong.requestedBy === state.currentUsername;
+  const isCurrentSongMine = currentlyPlayingSong && currentlyPlayingSong.requestedByUserId === state.currentUserId;
   if (isAdmin || isCurrentSongMine) {
     nextBtn.classList.remove('hidden');
   } else {
@@ -353,7 +353,7 @@ function renderPlaylist() {
 
   for (let i = 1; i < state.playlist.length; i++) {
     const song = state.playlist[i];
-    const isSongOwner = song.requestedBy === state.currentUsername;
+    const isSongOwner = song.requestedByUserId === state.currentUserId;
     const canDelete = isUserAdmin || isSongOwner;
 
     const row = document.createElement('div');
@@ -413,7 +413,7 @@ function checkSingingTurn() {
   const currentSong = state.playlist[0];
 
   // If the now playing song is requested by current user, and we haven't reminded them yet
-  if (currentSong.requestedBy === state.currentUsername) {
+  if (currentSong.requestedByUserId === state.currentUserId) {
     if (state.lastSingingSongId !== currentSong.id) {
       state.lastSingingSongId = currentSong.id;
       showTurnToSingReminder(currentSong);
@@ -765,7 +765,7 @@ function updateNowPlaying() {
     const avatarDisc = document.getElementById('playing-avatar-disc');
     if (noteIcon && avatarDisc) {
       // Look up current avatar of the singer from active room users list first, then fall back to requestedByAvatar
-      const singerUser = state.roomUsers.find((u) => u.username === currentSong.requestedBy);
+      const singerUser = state.roomUsers.find((u) => u.userId === currentSong.requestedByUserId);
       const av = String((singerUser && singerUser.avatar) || currentSong.requestedByAvatar || '🎤');
 
       const safeAvatarDiscSrc =

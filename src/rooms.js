@@ -50,13 +50,18 @@ export function createReactions() {
   return { ...DEFAULT_REACTIONS };
 }
 
-export function createSong({ title, singer, link, requestedBy, requestedByAvatar, dedicatedBy }) {
+export function createSong({ title, singer, link, requestedBy, requestedByUserId, requestedByAvatar, dedicatedBy }) {
+  if (!requestedByUserId) {
+    throw new Error('requestedByUserId is required');
+  }
+
   const song = {
     id: Math.random().toString(36).substring(2, 9),
     title: String(title).trim(),
     singer: String(singer || '').trim(),
     link: String(link || '').trim(),
     requestedBy,
+    requestedByUserId,
     requestedByAvatar,
     prioritized: false,
     reactions: createReactions(),
@@ -137,5 +142,5 @@ export function canManageQueue(userData, room) {
 }
 
 export function canDeleteSong(userData, room, song) {
-  return canManageQueue(userData, room) || song.requestedBy === userData.username;
+  return canManageQueue(userData, room) || song.requestedByUserId === userData.userId;
 }

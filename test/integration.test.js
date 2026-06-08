@@ -301,9 +301,11 @@ test('adding a song broadcasts playlist and persists room data', async () => {
     assert.equal(playlist.length, 1);
     assert.equal(playlist[0].title, '七里香');
     assert.equal(playlist[0].requestedBy, 'Alice');
+    assert.equal(playlist[0].requestedByUserId, 'user-1');
 
     const savedRooms = loadRooms(server.shareq.databaseFile, silentLogger);
     assert.equal(savedRooms.SONGS.songs[0].title, '七里香');
+    assert.equal(savedRooms.SONGS.songs[0].requestedByUserId, 'user-1');
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }
@@ -582,6 +584,136 @@ test('users cannot delete songs requested by someone else', async () => {
   }
 });
 
+test('song delete ownership follows user ID after profile renames', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'OWNER',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'OWNER',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const alicePlaylistPromise = waitForSocket(alice, 'playlist-updated');
+    const bobPlaylistPromise = waitForSocket(bob, 'playlist-updated');
+    alice.emit('add-song', {
+      title: '青花瓷',
+      singer: '周杰伦',
+      link: ''
+    });
+
+    const [playlist] = await Promise.all([alicePlaylistPromise, bobPlaylistPromise]);
+    const songId = playlist[0].id;
+    assert.equal(playlist[0].requestedByUserId, 'user-1');
+
+    const bobRenamePromise = waitForSocketMatching(
+      bob,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-2' && user.username === 'Alice')
+    );
+    bob.emit('update-profile', { username: 'Alice', avatar: '🎤' });
+    await bobRenamePromise;
+
+    const forbiddenPromise = waitForSocket(bob, 'system-message');
+    bob.emit('delete-song', { songId });
+    const forbiddenMessage = await forbiddenPromise;
+
+    assert.equal(forbiddenMessage.type, 'error');
+    assert.equal(server.shareq.roomsData.OWNER.songs.length, 1);
+
+    const aliceRenamePromise = waitForSocketMatching(
+      alice,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-1' && user.username === 'Carol')
+    );
+    alice.emit('update-profile', { username: 'Carol', avatar: '🎤' });
+    await aliceRenamePromise;
+
+    const deletePromise = waitForSocket(alice, 'playlist-updated');
+    alice.emit('delete-song', { songId });
+    const updatedPlaylist = await deletePromise;
+
+    assert.deepEqual(updatedPlaylist, []);
+    assert.deepEqual(server.shareq.roomsData.OWNER.songs, []);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('current singer skip permission follows user ID after profile renames', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'SINGER',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'SINGER',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const alicePlaylistPromise = waitForSocket(alice, 'playlist-updated');
+    const bobPlaylistPromise = waitForSocket(bob, 'playlist-updated');
+    alice.emit('add-song', {
+      title: '稻香',
+      singer: '周杰伦',
+      link: ''
+    });
+    const [playlist] = await Promise.all([alicePlaylistPromise, bobPlaylistPromise]);
+    assert.equal(playlist[0].requestedByUserId, 'user-1');
+
+    const bobRenamePromise = waitForSocketMatching(
+      bob,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-2' && user.username === 'Alice')
+    );
+    bob.emit('update-profile', { username: 'Alice', avatar: '🎤' });
+    await bobRenamePromise;
+
+    const noHistoryPromise = waitForNoSocketEvent(bob, 'history-updated');
+    bob.emit('next-song');
+    await noHistoryPromise;
+    assert.equal(server.shareq.roomsData.SINGER.songs.length, 1);
+    assert.equal(server.shareq.roomsData.SINGER.alreadySung.length, 0);
+
+    const aliceRenamePromise = waitForSocketMatching(
+      alice,
+      'users-updated',
+      (users) => users.some((user) => user.userId === 'user-1' && user.username === 'Carol')
+    );
+    alice.emit('update-profile', { username: 'Carol', avatar: '🎤' });
+    await aliceRenamePromise;
+
+    const historyPromise = waitForSocket(alice, 'history-updated');
+    alice.emit('next-song');
+    const history = await historyPromise;
+
+    assert.equal(history.length, 1);
+    assert.equal(history[0].id, playlist[0].id);
+    assert.equal(server.shareq.roomsData.SINGER.songs.length, 0);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
 test('host can delete songs requested by another user', async () => {
   const server = await createTestServer();
   const clients = [];
@@ -696,6 +828,7 @@ test('playlist history supports undo and redo', () => {
     singer: '',
     link: '',
     requestedBy: 'Alice',
+    requestedByUserId: 'user-1',
     requestedByAvatar: '🎤',
     prioritized: false,
     reactions: createReactions(),
@@ -709,6 +842,7 @@ test('playlist history supports undo and redo', () => {
     singer: '',
     link: '',
     requestedBy: 'Bob',
+    requestedByUserId: 'user-2',
     requestedByAvatar: '🎤',
     prioritized: false,
     reactions: createReactions(),
