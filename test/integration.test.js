@@ -756,6 +756,54 @@ test('host can delete songs requested by another user', async () => {
   }
 });
 
+test('guests cannot shuffle the playlist by emitting the socket event directly', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const host = await connectClient(server.port);
+    const guest = await connectClient(server.port);
+    clients.push(host, guest);
+
+    await joinRoom(host, {
+      roomId: 'SHUFFLE',
+      username: 'Host',
+      userId: 'host-user'
+    });
+    await joinRoom(guest, {
+      roomId: 'SHUFFLE',
+      username: 'Guest',
+      userId: 'guest-user'
+    });
+
+    for (const title of ['One', 'Two', 'Three']) {
+      const hostPlaylistPromise = waitForSocket(host, 'playlist-updated');
+      const guestPlaylistPromise = waitForSocket(guest, 'playlist-updated');
+      host.emit('add-song', {
+        title,
+        singer: '',
+        link: ''
+      });
+      await Promise.all([hostPlaylistPromise, guestPlaylistPromise]);
+    }
+
+    const originalOrder = server.shareq.roomsData.SHUFFLE.songs.map((song) => song.id);
+    const errorPromise = waitForSocket(guest, 'system-message');
+    const noPlaylistPromise = waitForNoSocketEvent(host, 'playlist-updated');
+    guest.emit('shuffle-playlist');
+    const [errorMessage] = await Promise.all([errorPromise, noPlaylistPromise]);
+
+    assert.equal(errorMessage.type, 'error');
+    assert.deepEqual(
+      server.shareq.roomsData.SHUFFLE.songs.map((song) => song.id),
+      originalOrder
+    );
+    assert.equal(server.shareq.roomsData.SHUFFLE.historyStack.length, 3);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
 test('moderators can advance the queue after host promotion', async () => {
   const server = await createTestServer();
   const clients = [];

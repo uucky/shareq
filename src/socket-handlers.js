@@ -14,7 +14,7 @@ import {
   transferHost,
   undoPlaylist
 } from './room-actions.js';
-import { DEFAULT_AVATAR, getOrCreateRoom as getOrCreateRoomData, normalizeRoomId } from './rooms.js';
+import { DEFAULT_AVATAR, canManageQueue, getOrCreateRoom as getOrCreateRoomData, normalizeRoomId } from './rooms.js';
 
 const INVALID_REQUEST_MESSAGE = '请求参数无效，请刷新后重试';
 const INVALID_JOIN_MESSAGE = '房间号、昵称或用户 ID 无效，请检查后重试';
@@ -515,6 +515,11 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const room = roomsData[userData.roomId];
       if (!room) {
+        return;
+      }
+
+      if (!canManageQueue(userData, room)) {
+        socket.emit('system-message', { type: 'error', text: '只有主持人或房管可以打乱歌单' });
         return;
       }
 
