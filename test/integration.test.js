@@ -7,6 +7,7 @@ import { clearTimeout, setTimeout } from 'node:timers';
 import { io as createClient } from 'socket.io-client';
 
 import { createShareQServer } from '../src/app.js';
+import { addSong } from '../src/room-actions.js';
 import { createReactions, getOrCreateRoom, pushHistory, redoAction, undoAction } from '../src/rooms.js';
 import { createSaveData, loadRooms } from '../src/storage.js';
 
@@ -450,6 +451,43 @@ test('add-song rejects empty and invalid payloads without mutating the queue', a
   }
 });
 
+test('add-song cooldown rejects rapid duplicate submissions from the same socket', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'ADDSPAM',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const firstPlaylistPromise = waitForSocket(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: 'First',
+      singer: '',
+      link: ''
+    });
+    await firstPlaylistPromise;
+
+    const errorPromise = waitForSocket(client, 'system-message');
+    const noPlaylistPromise = waitForNoSocketEvent(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: 'Second',
+      singer: '',
+      link: ''
+    });
+    const [errorMessage] = await Promise.all([errorPromise, noPlaylistPromise]);
+
+    assert.equal(errorMessage.type, 'error');
+    assert.equal(server.shareq.roomsData.ADDSPAM.songs.length, 1);
+    assert.equal(server.shareq.roomsData.ADDSPAM.songs[0].title, 'First');
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
 test('invalid reaction types do not update playlist or trigger effects', async () => {
   const server = await createTestServer();
   let client;
@@ -478,6 +516,47 @@ test('invalid reaction types do not update playlist or trigger effects', async (
     const reactions = server.shareq.roomsData.REACTIONS.songs[0].reactions;
     assert.deepEqual(reactions, createReactions());
     assert.equal(Object.hasOwn(reactions, 'tomato'), false);
+  } finally {
+    await closeTestServer(server, client ? [client] : []);
+  }
+});
+
+test('send-reaction cooldown drops rapid duplicate reactions from the same socket', async () => {
+  const server = await createTestServer();
+  let client;
+
+  try {
+    client = await connectClient(server.port);
+    await joinRoom(client, {
+      roomId: 'REACTSPAM',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+
+    const addPlaylistPromise = waitForSocket(client, 'playlist-updated');
+    client.emit('add-song', {
+      title: '七里香',
+      singer: '周杰伦',
+      link: ''
+    });
+    await addPlaylistPromise;
+
+    const firstPlaylistPromise = waitForSocket(client, 'playlist-updated');
+    const firstEffectPromise = waitForSocket(client, 'trigger-reaction-effect');
+    client.emit('send-reaction', { type: 'rose' });
+    await Promise.all([firstPlaylistPromise, firstEffectPromise]);
+
+    const noPlaylistPromise = waitForNoSocketEvent(client, 'playlist-updated');
+    const noEffectPromise = waitForNoSocketEvent(client, 'trigger-reaction-effect');
+    client.emit('send-reaction', { type: 'rose' });
+    await Promise.all([noPlaylistPromise, noEffectPromise]);
+
+    assert.deepEqual(server.shareq.roomsData.REACTSPAM.songs[0].reactions, {
+      rose: 1,
+      clap: 0,
+      egg: 0,
+      shoe: 0
+    });
   } finally {
     await closeTestServer(server, client ? [client] : []);
   }
@@ -536,6 +615,52 @@ test('dedicate-song rejects invalid payloads without creating pending dedication
     assert.match(malformedFailure.message, /指名点歌/);
     assert.equal(server.shareq.pendingDedications.size, 0);
     assert.equal(server.shareq.roomsData.DEDICATE.songs.length, 0);
+  } finally {
+    await closeTestServer(server, clients);
+  }
+});
+
+test('dedicate-song cooldown rejects rapid duplicate requests from the same socket', async () => {
+  const server = await createTestServer();
+  const clients = [];
+
+  try {
+    const alice = await connectClient(server.port);
+    const bob = await connectClient(server.port);
+    clients.push(alice, bob);
+
+    await joinRoom(alice, {
+      roomId: 'DEDISPAM',
+      username: 'Alice',
+      userId: 'user-1'
+    });
+    await joinRoom(bob, {
+      roomId: 'DEDISPAM',
+      username: 'Bob',
+      userId: 'user-2'
+    });
+
+    const firstPendingPromise = waitForSocket(alice, 'dedication-pending');
+    alice.emit('dedicate-song', {
+      title: 'First',
+      singer: '',
+      link: '',
+      targetUserId: 'user-2'
+    });
+    await firstPendingPromise;
+    assert.equal(server.shareq.pendingDedications.size, 1);
+
+    const cooldownPromise = waitForSocket(alice, 'dedication-failed');
+    alice.emit('dedicate-song', {
+      title: 'Second',
+      singer: '',
+      link: '',
+      targetUserId: 'user-2'
+    });
+    const cooldownFailure = await cooldownPromise;
+
+    assert.match(cooldownFailure.message, /频繁/);
+    assert.equal(server.shareq.pendingDedications.size, 1);
   } finally {
     await closeTestServer(server, clients);
   }
@@ -776,18 +901,24 @@ test('guests cannot shuffle the playlist by emitting the socket event directly',
       userId: 'guest-user'
     });
 
+    const room = server.shareq.roomsData.SHUFFLE;
     for (const title of ['One', 'Two', 'Three']) {
-      const hostPlaylistPromise = waitForSocket(host, 'playlist-updated');
-      const guestPlaylistPromise = waitForSocket(guest, 'playlist-updated');
-      host.emit('add-song', {
-        title,
-        singer: '',
-        link: ''
-      });
-      await Promise.all([hostPlaylistPromise, guestPlaylistPromise]);
+      addSong(
+        room,
+        {
+          username: 'Host',
+          userId: 'host-user',
+          avatar: '🎤'
+        },
+        {
+          title,
+          singer: '',
+          link: ''
+        }
+      );
     }
 
-    const originalOrder = server.shareq.roomsData.SHUFFLE.songs.map((song) => song.id);
+    const originalOrder = room.songs.map((song) => song.id);
     const errorPromise = waitForSocket(guest, 'system-message');
     const noPlaylistPromise = waitForNoSocketEvent(host, 'playlist-updated');
     guest.emit('shuffle-playlist');
@@ -795,10 +926,10 @@ test('guests cannot shuffle the playlist by emitting the socket event directly',
 
     assert.equal(errorMessage.type, 'error');
     assert.deepEqual(
-      server.shareq.roomsData.SHUFFLE.songs.map((song) => song.id),
+      room.songs.map((song) => song.id),
       originalOrder
     );
-    assert.equal(server.shareq.roomsData.SHUFFLE.historyStack.length, 3);
+    assert.equal(room.historyStack.length, 3);
   } finally {
     await closeTestServer(server, clients);
   }

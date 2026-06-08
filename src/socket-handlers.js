@@ -28,6 +28,8 @@ const MAX_SINGER_LENGTH = 80;
 const MAX_LINK_LENGTH = 500;
 const MAX_AVATAR_LENGTH = 64 * 1024;
 const ROOM_ID_PATTERN = /^[A-Z0-9]+$/;
+const SONG_SUBMISSION_COOLDOWN_MS = 1500;
+const REACTION_COOLDOWN_MS = 300;
 
 function isPayloadObject(payload) {
   return payload !== null && typeof payload === 'object' && !Array.isArray(payload);
@@ -83,6 +85,19 @@ function isValidHttpLink(link) {
   } catch {
     return false;
   }
+}
+
+function consumeCooldown(socket, key, cooldownMs) {
+  const now = Date.now();
+  socket.data.shareqCooldowns ||= {};
+
+  const nextAllowedAt = socket.data.shareqCooldowns[key] || 0;
+  if (now < nextAllowedAt) {
+    return false;
+  }
+
+  socket.data.shareqCooldowns[key] = now + cooldownMs;
+  return true;
 }
 
 function validateJoinPayload(payload) {
@@ -325,6 +340,11 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
         return;
       }
 
+      if (!consumeCooldown(socket, 'song-submission', SONG_SUBMISSION_COOLDOWN_MS)) {
+        socket.emit('system-message', { type: 'error', text: '操作太频繁，请稍后再试' });
+        return;
+      }
+
       const result = addSong(room, userData, songPayload);
 
       io.to(userData.roomId).emit('playlist-updated', room.songs);
@@ -349,6 +369,11 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       const dedicationPayload = validateDedicationPayload(payload);
       if (!dedicationPayload) {
         socket.emit('dedication-failed', { message: INVALID_DEDICATION_MESSAGE });
+        return;
+      }
+
+      if (!consumeCooldown(socket, 'song-submission', SONG_SUBMISSION_COOLDOWN_MS)) {
+        socket.emit('dedication-failed', { message: '操作太频繁，请稍后再试' });
         return;
       }
 
@@ -761,6 +786,10 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       const type = validateStringIdPayload(payload, 'type');
       if (!type) {
         socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        return;
+      }
+
+      if (!consumeCooldown(socket, 'reaction', REACTION_COOLDOWN_MS)) {
         return;
       }
 

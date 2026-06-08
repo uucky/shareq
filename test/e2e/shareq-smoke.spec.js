@@ -386,7 +386,7 @@ test('queue advancement syncs now playing and history state', async ({ browser, 
     contexts.push(userBSession.context);
 
     await requestFirstSong(page, firstSong);
-    await submitSong(page, secondSong);
+    await submitSong(userBSession.page, secondSong);
     await expect(page.locator('#song-count-badge')).toHaveText('2 首');
     await expect(userBSession.page.locator('#song-count-badge')).toHaveText('2 首');
 
