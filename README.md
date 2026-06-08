@@ -74,33 +74,18 @@
 - **前端构建**: Vite + Vanilla JS，生产环境输出带哈希的静态资源
 - **音效合成**: Web Audio API 实时合成互动音效，无需加载音频文件
 
-## 🚀 本地开发
+## 🚀 开发与维护
 
-安装依赖：
+本地开发：
 
 ```bash
 npm install
-```
-
-开发时分别启动后端和 Vite 前端：
-
-```bash
-npm start
 npm run dev
 ```
 
-生产运行前先构建前端：
+测试与发布请参考 `./.github/workflows/ci.yml` 文件。
 
-```bash
-npm run build
-npm start
-```
-
-完整检查：
-
-```bash
-npm run verify
-```
+生产部署请参考 `./docker-compose.example.yml` 文件。
 
 ---
 

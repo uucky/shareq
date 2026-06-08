@@ -1,6 +1,6 @@
 services:
   shareq:
-    image: ghcr.io/uucky/shareq
+    image: ghcr.io/uucky/shareq:master
     container_name: shareq
     restart: unless-stopped
     ports:
