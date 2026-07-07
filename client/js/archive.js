@@ -1,4 +1,5 @@
 import { escapeHtml, getSafeHttpUrl } from './dom.js';
+import { t } from './i18n.js';
 import { state } from './state.js';
 
 function toCount(value) {
@@ -8,6 +9,82 @@ function toCount(value) {
   }
 
   return Math.floor(count);
+}
+
+function getArchiveLabels() {
+  if (state.language === 'en') {
+    return {
+      lang: 'en',
+      title: 'KTV Session Playlist Archive - ShareQ',
+      heading: '🎤 ShareQ KTV Playlist Report',
+      exportedAt: 'Exported at:',
+      room: 'Room:',
+      sung: 'Sung',
+      nowPlaying: 'Now Playing',
+      queued: 'Queued',
+      none: 'None',
+      noSungSongs: 'No sung songs yet',
+      sangCount: 'sang {count} song(s)',
+      noArtistData: 'No artist request data',
+      requestedCount: 'requested {count} time(s)',
+      unknown: 'Unknown',
+      noLikedSongs: 'No liked songs yet',
+      likedCount: 'liked {count} time(s)',
+      topSingers: '🎤 Top Singers',
+      topArtists: '🌟 Top Requested Artists',
+      topSongs: '❤️ Most Popular Songs',
+      sortHint: '💡 Click any table header, such as song title or requester, to sort the archive.',
+      timezone: 'Timezone:',
+      localTime: 'Local Time',
+      utc: 'UTC / Z',
+      shanghai: 'Beijing Time (CST / UTC+8)',
+      tokyo: 'Tokyo Time (JST / UTC+9)',
+      newYork: 'New York Time (EST/EDT)',
+      london: 'London Time (GMT/BST)',
+      detectedLocal: 'Detected local timezone',
+      headers: ['Order ⇅', 'Status ⇅', 'Song Title ⇅', 'Artist ⇅', 'Requester ⇅', 'External Link ⇅', 'Gift Score ⇅', 'Completed At ⇅'],
+      openLink: '🔗 Open',
+      pending: 'Pending',
+      singing: 'Singing',
+      sortLocale: 'en'
+    };
+  }
+
+  return {
+    lang: 'zh-CN',
+    title: 'KTV 演唱会话歌单存档 - ShareQ',
+    heading: '🎤 ShareQ KTV 歌单记录报告',
+    exportedAt: '存档时间：',
+    room: '房间号：',
+    sung: '已唱',
+    nowPlaying: '正在演唱',
+    queued: '排队中',
+    none: '无',
+    noSungSongs: '暂无已唱歌曲',
+    sangCount: '演唱了 {count} 首',
+    noArtistData: '暂无歌手点播数据',
+    requestedCount: '被点播 {count} 次',
+    unknown: '未知',
+    noLikedSongs: '暂无点赞互动金曲',
+    likedCount: '获赞 {count} 次',
+    topSingers: '🎤 歌会麦霸排行',
+    topArtists: '🌟 热门点播歌手',
+    topSongs: '❤️ 人气金曲',
+    sortHint: '💡 点击表格头部（如歌曲名、点歌人等）即可进行智能排序。',
+    timezone: '切换时间戳时区 (Timezone):',
+    localTime: '本地时区 (Local Time)',
+    utc: '格林威治时间 (UTC / Z)',
+    shanghai: '北京时间 (CST / UTC+8)',
+    tokyo: '东京时间 (JST / UTC+9)',
+    newYork: '纽约时间 (EST/EDT)',
+    london: '伦敦时间 (GMT/BST)',
+    detectedLocal: '检测本地时区',
+    headers: ['点歌顺序 ⇅', '当前状态 ⇅', '歌曲名 ⇅', '歌手名字 ⇅', '点播用户 ⇅', '外部链接 ⇅', '获赠点赞礼物 ⇅', '唱毕完成时间 ⇅'],
+    openLink: '🔗 打开伴奏',
+    pending: '待唱',
+    singing: '正在唱',
+    sortLocale: 'zh-CN'
+  };
 }
 
 // Modal Toggle for Archive report
@@ -22,6 +99,7 @@ export function closeArchiveModal() {
 // EXPORT EGG: Generate high fidelity interactive HTML file with live column sorting
 export function downloadSessionArchive() {
   const allSongs = [];
+  const labels = getArchiveLabels();
   const exportTimestamp = Date.now();
   const roomIdForHtml = escapeHtml(state.currentRoomId);
   const roomIdForDownload = String(state.currentRoomId || 'ROOM').replace(/[^\w-]/g, '_') || 'ROOM';
@@ -30,9 +108,9 @@ export function downloadSessionArchive() {
   state.historyPlaylist.forEach((s, idx) => {
     allSongs.push({
       order: idx + 1,
-      status: '已唱 (Sung)',
+      status: labels.sung,
       title: s.title,
-      singer: s.singer || '无',
+      singer: s.singer || labels.none,
       link: s.link || '',
       requestedBy: s.requestedBy,
       rose: toCount(s.reactions?.rose),
@@ -47,9 +125,9 @@ export function downloadSessionArchive() {
   state.playlist.forEach((s, idx) => {
     allSongs.push({
       order: state.historyPlaylist.length + idx + 1,
-      status: idx === 0 ? '正在演唱 (Now Playing)' : '排队中 (Queued)',
+      status: idx === 0 ? labels.nowPlaying : labels.queued,
       title: s.title,
-      singer: s.singer || '无',
+      singer: s.singer || labels.none,
       link: s.link || '',
       requestedBy: s.requestedBy,
       rose: toCount(s.reactions?.rose),
@@ -73,11 +151,11 @@ export function downloadSessionArchive() {
 
   let topSingersHtml = '';
   if (topSingers.length === 0) {
-    topSingersHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无已唱歌曲</li>";
+    topSingersHtml = `<li style='color: #676c8c; list-style: none; margin-left: -20px;'>${labels.noSungSongs}</li>`;
   } else {
     const medals = ['🥇', '🥈', '🥉', '🔹', '🔹'];
     topSingers.forEach((item, idx) => {
-      topSingersHtml += `<li style='margin-bottom: 6px;'>${medals[idx] || '🔹'} <strong>${escapeHtml(item.name)}</strong> - 演唱了 ${item.count} 首</li>`;
+      topSingersHtml += `<li style='margin-bottom: 6px;'>${medals[idx] || '🔹'} <strong>${escapeHtml(item.name)}</strong> - ${labels.sangCount.replace('{count}', item.count)}</li>`;
     });
   }
 
@@ -86,7 +164,7 @@ export function downloadSessionArchive() {
   const addArtist = (s) => {
     if (!s.singer) return;
     const art = s.singer.trim();
-    if (art && art !== '未知歌手' && art !== '无') {
+    if (art && art !== t('unknown-singer') && art !== labels.none) {
       artistCounts[art] = (artistCounts[art] || 0) + 1;
     }
   };
@@ -99,10 +177,10 @@ export function downloadSessionArchive() {
 
   let topArtistsHtml = '';
   if (topArtists.length === 0) {
-    topArtistsHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无歌手点播数据</li>";
+    topArtistsHtml = `<li style='color: #676c8c; list-style: none; margin-left: -20px;'>${labels.noArtistData}</li>`;
   } else {
     topArtists.forEach((item) => {
-      topArtistsHtml += `<li style='margin-bottom: 6px;'>🔥 <strong>${escapeHtml(item.name)}</strong> - 被点播 ${item.count} 次</li>`;
+      topArtistsHtml += `<li style='margin-bottom: 6px;'>🔥 <strong>${escapeHtml(item.name)}</strong> - ${labels.requestedCount.replace('{count}', item.count)}</li>`;
     });
   }
 
@@ -113,7 +191,7 @@ export function downloadSessionArchive() {
     const score = toCount(reacts.rose) + toCount(reacts.clap);
     songLikes.push({
       title: s.title,
-      singer: s.singer || '未知',
+      singer: s.singer || labels.unknown,
       score: score
     });
   };
@@ -129,18 +207,18 @@ export function downloadSessionArchive() {
 
   let topSongsHtml = '';
   if (topSongs.length === 0) {
-    topSongsHtml = "<li style='color: #676c8c; list-style: none; margin-left: -20px;'>暂无点赞互动金曲</li>";
+    topSongsHtml = `<li style='color: #676c8c; list-style: none; margin-left: -20px;'>${labels.noLikedSongs}</li>`;
   } else {
     topSongs.forEach((item) => {
-      topSongsHtml += `<li style='margin-bottom: 6px;'>👍 <strong>${escapeHtml(item.title)}</strong> (${escapeHtml(item.singer)}) - 获赞 ${item.score} 次</li>`;
+      topSongsHtml += `<li style='margin-bottom: 6px;'>👍 <strong>${escapeHtml(item.title)}</strong> (${escapeHtml(item.singer)}) - ${labels.likedCount.replace('{count}', item.score)}</li>`;
     });
   }
 
   let html = `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="${labels.lang}">
 <head>
   <meta charset="UTF-8">
-  <title>KTV 演唱会话歌单存档 - ShareQ</title>
+  <title>${labels.title}</title>
   <style>
     body {
       background: #080512;
@@ -264,27 +342,26 @@ export function downloadSessionArchive() {
 </head>
 <body>
   <div class="container">
-    <h1>🎤 ShareQ KTV 歌单记录报告</h1>
+    <h1>${labels.heading}</h1>
     <div class="subtitle">
-      存档时间：<span id="exportTime" data-utc="${exportTimestamp}">${new Date(exportTimestamp).toISOString()}</span> | 房间号：${roomIdForHtml}
+      ${labels.exportedAt}<span id="exportTime" data-utc="${exportTimestamp}">${new Date(exportTimestamp).toISOString()}</span> | ${labels.room}${roomIdForHtml}
     </div>
 
-    <!-- 动态数据统计看板 -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
       <div style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
-        <h3 style="margin-top:0; color: #c084fc; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 12px;">🎤 歌会麦霸排行</h3>
+        <h3 style="margin-top:0; color: #c084fc; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 12px;">${labels.topSingers}</h3>
         <ul style="padding-left: 20px; margin: 0; line-height: 1.6; font-size: 0.92rem; color: #cbd5e1;">
           ${topSingersHtml}
         </ul>
       </div>
       <div style="background: rgba(255, 42, 133, 0.05); border: 1px solid rgba(255, 42, 133, 0.15); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
-        <h3 style="margin-top:0; color: #ff2a85; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 12px;">🌟 热门点播歌手</h3>
+        <h3 style="margin-top:0; color: #ff2a85; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 12px;">${labels.topArtists}</h3>
         <ul style="padding-left: 20px; margin: 0; line-height: 1.6; font-size: 0.92rem; color: #cbd5e1;">
           ${topArtistsHtml}
         </ul>
       </div>
       <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
-        <h3 style="margin-top:0; color: #00f0ff; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 12px;">❤️ 人气金曲</h3>
+        <h3 style="margin-top:0; color: #00f0ff; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 12px;">${labels.topSongs}</h3>
         <ul style="padding-left: 20px; margin: 0; line-height: 1.6; font-size: 0.92rem; color: #cbd5e1;">
           ${topSongsHtml}
         </ul>
@@ -293,17 +370,17 @@ export function downloadSessionArchive() {
     
     <div class="config-panel">
       <div style="font-size: 0.88rem; color: #9aa0c4;">
-        💡 点击表格头部（如歌曲名、点歌人等）即可进行智能排序。
+        ${labels.sortHint}
       </div>
       <div class="timezone-picker">
-        <label for="tzSelect">切换时间戳时区 (Timezone):</label>
+        <label for="tzSelect">${labels.timezone}</label>
         <select id="tzSelect" onchange="changeTimezone(this.value)">
-          <option value="local">本地时区 (Local Time)</option>
-          <option value="UTC">格林威治时间 (UTC / Z)</option>
-          <option value="Asia/Shanghai">北京时间 (CST / UTC+8)</option>
-          <option value="Asia/Tokyo">东京时间 (JST / UTC+9)</option>
-          <option value="America/New_York">纽约时间 (EST/EDT)</option>
-          <option value="Europe/London">伦敦时间 (GMT/BST)</option>
+          <option value="local">${labels.localTime}</option>
+          <option value="UTC">${labels.utc}</option>
+          <option value="Asia/Shanghai">${labels.shanghai}</option>
+          <option value="Asia/Tokyo">${labels.tokyo}</option>
+          <option value="America/New_York">${labels.newYork}</option>
+          <option value="Europe/London">${labels.london}</option>
         </select>
       </div>
     </div>
@@ -311,34 +388,27 @@ export function downloadSessionArchive() {
     <table id="songsTable">
       <thead>
         <tr>
-          <th onclick="sortTable(0)">点歌顺序 ⇅</th>
-          <th onclick="sortTable(1)">当前状态 ⇅</th>
-          <th onclick="sortTable(2)">歌曲名 ⇅</th>
-          <th onclick="sortTable(3)">歌手名字 ⇅</th>
-          <th onclick="sortTable(4)">点播用户 ⇅</th>
-          <th onclick="sortTable(5)">外部链接 ⇅</th>
-          <th onclick="sortTable(6)">获赠点赞礼物 ⇅</th>
-          <th onclick="sortTable(7)">唱毕完成时间 ⇅</th>
+          ${labels.headers.map((header, index) => `<th onclick="sortTable(${index})">${header}</th>`).join('')}
         </tr>
       </thead>
       <tbody>
   `;
 
   allSongs.forEach((s) => {
-    const badgeClass = s.status.includes('已唱')
+    const badgeClass = s.status === labels.sung
       ? 'badge-sung'
-      : s.status.includes('正在')
+      : s.status === labels.nowPlaying
         ? 'badge-singing'
         : 'badge-queued';
     const safeLink = getSafeHttpUrl(s.link);
     const linkTag = safeLink
-      ? `<a class="link-btn" href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">🔗 打开伴奏</a>`
+      ? `<a class="link-btn" href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer">${labels.openLink}</a>`
       : '<span style="color: #676c8c;">-</span>';
     const utc = Number(s.utc) || 0;
 
-    let initialTimeStr = '待唱';
+    let initialTimeStr = labels.pending;
     if (utc === -1) {
-      initialTimeStr = '正在唱';
+      initialTimeStr = labels.singing;
     } else if (utc > 0) {
       initialTimeStr = new Date(utc).toISOString();
     }
@@ -378,9 +448,9 @@ export function downloadSessionArchive() {
         if (utcMs > 0) {
           cell.textContent = formatTimeISO(utcMs, tz);
         } else if (utcMs === -1) {
-          cell.textContent = "正在唱";
+          cell.textContent = ${JSON.stringify(labels.singing)};
         } else {
-          cell.textContent = "待唱";
+          cell.textContent = ${JSON.stringify(labels.pending)};
         }
       });
     }
@@ -483,8 +553,8 @@ export function downloadSessionArchive() {
         }
 
         return nextDir === 'asc'
-          ? valA.localeCompare(valB, 'zh-CN')
-          : valB.localeCompare(valA, 'zh-CN');
+          ? valA.localeCompare(valB, ${JSON.stringify(labels.sortLocale)})
+          : valB.localeCompare(valA, ${JSON.stringify(labels.sortLocale)});
       });
       
       tbody.append(...rows);
@@ -506,7 +576,7 @@ export function downloadSessionArchive() {
           if (!exists) {
             const opt = document.createElement("option");
             opt.value = localTz;
-            opt.textContent = "检测本地时区 (" + localTz + ")";
+            opt.textContent = ${JSON.stringify(labels.detectedLocal)} + " (" + localTz + ")";
             select.insertBefore(opt, select.options[1] || null);
           }
         }

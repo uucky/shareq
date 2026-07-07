@@ -1,39 +1,37 @@
 import { clearChildren, createElement } from './dom.js';
+import { t } from './i18n.js';
 import { state } from './state.js';
 
 // Compute KTV Session statistics
 export function renderStats() {
   const statsCont = document.getElementById('stats-playlist-container');
   if (statsCont) {
-    const topSingerValCheck = document.getElementById('stat-top-singer');
-    if (!topSingerValCheck) {
-      statsCont.innerHTML = `
+    statsCont.innerHTML = `
         <div class="stats-grid">
           <!-- Top Singer Card -->
           <div class="stats-card">
-            <h3><i class="fa-solid fa-microphone-lines"></i> 今日麦霸</h3>
+            <h3><i class="fa-solid fa-microphone-lines"></i>${t('stat-singer-title')}</h3>
             <div class="stats-card-main-val" id="stat-top-singer">--</div>
-            <div class="stats-card-sub-val" id="stat-top-singer-sub">暂无已唱歌曲</div>
+            <div class="stats-card-sub-val" id="stat-top-singer-sub">${t('stat-singer-empty')}</div>
             <div class="stats-list" id="stats-singers-list" style="margin-top: 15px;"></div>
           </div>
 
           <!-- Top Artist Card -->
           <div class="stats-card">
-            <h3><i class="fa-solid fa-music"></i> 热门点播歌手</h3>
+            <h3><i class="fa-solid fa-music"></i>${t('stat-artist-title')}</h3>
             <div class="stats-card-main-val" id="stat-top-artist">--</div>
-            <div class="stats-card-sub-val" id="stat-top-artist-sub">暂无歌手点播数据</div>
+            <div class="stats-card-sub-val" id="stat-top-artist-sub">${t('stat-artist-empty')}</div>
             <div class="stats-list" id="stats-artists-list" style="margin-top: 15px;"></div>
           </div>
 
           <!-- Top Song Card -->
           <div class="stats-card">
-            <h3><i class="fa-solid fa-heart"></i> 人气金曲</h3>
+            <h3><i class="fa-solid fa-heart"></i>${t('stat-song-title')}</h3>
             <div class="stats-card-main-val" id="stat-top-song">--</div>
-            <div class="stats-card-sub-val" id="stat-top-song-sub">暂无赠礼点赞</div>
+            <div class="stats-card-sub-val" id="stat-top-song-sub">${t('stat-song-empty')}</div>
           </div>
         </div>
       `;
-    }
   }
 
   const topSingerVal = document.getElementById('stat-top-singer');
@@ -60,10 +58,10 @@ export function renderStats() {
 
   if (topSingers.length > 0) {
     topSingerVal.textContent = topSingers[0].name;
-    topSingerSub.textContent = `演唱了 ${topSingers[0].count} 首歌曲`;
+    topSingerSub.textContent = t('stat-singer-populated', { count: topSingers[0].count });
   } else {
     topSingerVal.textContent = '--';
-    topSingerSub.textContent = '暂无已唱歌曲';
+    topSingerSub.textContent = t('stat-singer-empty');
   }
 
   // Populate Singer list (top 5)
@@ -72,7 +70,7 @@ export function renderStats() {
     statsSingersList.appendChild(
       createElement('div', {
         className: 'no-stats-msg',
-        text: '暂无歌手数据',
+        text: t('stat-singer-no-data'),
         style: 'color:var(--text-muted); font-size:0.85rem; padding:10px;'
       })
     );
@@ -103,7 +101,7 @@ export function renderStats() {
       row.appendChild(
         createElement('span', {
           className: 'stats-count',
-          text: `${item.count} 首`,
+          text: t('stat-songs-unit', { count: item.count }),
           style: 'font-weight:600; color:var(--color-primary);'
         })
       );
@@ -116,7 +114,7 @@ export function renderStats() {
   const addArtist = (s) => {
     if (!s.singer) return;
     const art = s.singer.trim();
-    if (art && art !== '未知歌手' && art !== '无') {
+    if (art && art !== t('unknown-singer') && art !== '无') {
       artistCounts[art] = (artistCounts[art] || 0) + 1;
     }
   };
@@ -129,10 +127,10 @@ export function renderStats() {
 
   if (topArtists.length > 0) {
     topArtistVal.textContent = topArtists[0].name;
-    topArtistSub.textContent = `被点播 ${topArtists[0].count} 次`;
+    topArtistSub.textContent = t('stat-artist-populated', { count: topArtists[0].count });
   } else {
     topArtistVal.textContent = '--';
-    topArtistSub.textContent = '暂无点歌记录';
+    topArtistSub.textContent = t('stat-artist-no-data');
   }
 
   // Populate Artist list (top 5)
@@ -141,7 +139,7 @@ export function renderStats() {
     statsArtistsList.appendChild(
       createElement('div', {
         className: 'no-stats-msg',
-        text: '暂无歌手点播数据',
+        text: t('stat-artist-empty'),
         style: 'color:var(--text-muted); font-size:0.85rem; padding:10px;'
       })
     );
@@ -171,7 +169,7 @@ export function renderStats() {
       row.appendChild(
         createElement('span', {
           className: 'stats-count',
-          text: `${item.count} 次`,
+          text: t('stat-times-unit', { count: item.count }),
           style: 'font-weight:600; color:var(--color-secondary);'
         })
       );
@@ -186,7 +184,7 @@ export function renderStats() {
     const score = (reacts.rose || 0) + (reacts.clap || 0);
     songLikes.push({
       title: s.title,
-      singer: s.singer || '未知',
+      singer: s.singer || t('unknown-singer-short'),
       score: score
     });
   };
@@ -199,9 +197,9 @@ export function renderStats() {
 
   if (topSongs.length > 0) {
     topSongVal.textContent = topSongs[0].title;
-    topSongSub.textContent = `${topSongs[0].singer} - 获赞 ${topSongs[0].score} 次`;
+    topSongSub.textContent = t('stat-song-populated', { singer: topSongs[0].singer, score: topSongs[0].score });
   } else {
     topSongVal.textContent = '--';
-    topSongSub.textContent = '暂无赠礼点赞';
+    topSongSub.textContent = t('stat-song-empty');
   }
 }

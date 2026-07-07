@@ -1,6 +1,15 @@
 import { io } from 'socket.io-client';
 
+import { t } from './i18n.js';
 import { state } from './state.js';
+
+function translatedPayloadText(payload, fallbackField = 'text') {
+  if (payload?.i18nKey) {
+    return t(payload.i18nKey, payload.i18nParams || {});
+  }
+
+  return payload?.[fallbackField] || '';
+}
 
 export function initializeSocketHandlers(deps) {
   const {
@@ -112,7 +121,7 @@ export function initializeSocketHandlers(deps) {
   });
 
   state.socket.on('system-message', (msg) => {
-    showToast(msg.type, msg.text);
+    showToast(msg.type, translatedPayloadText(msg));
   });
 
   state.socket.on('dedication-request', (data) => {
@@ -120,31 +129,31 @@ export function initializeSocketHandlers(deps) {
   });
 
   state.socket.on('dedication-response-notify', (data) => {
-    showToast('dedicate', data.text);
+    showToast('dedicate', translatedPayloadText(data));
   });
 
   state.socket.on('dedication-failed', (data) => {
-    showToast('delete', `❌ 指名点歌失败: ${data.message}`);
+    showToast('delete', t('dedication-failed', { message: translatedPayloadText(data, 'message') }));
   });
 
   state.socket.on('dedication-pending', (data) => {
-    showToast('info', `📤 已向 ${data.targetUsername} 发送指名点歌《${data.title}》，等待接受...`);
+    showToast('info', t('dedication-pending', { username: data.targetUsername, title: data.title }));
   });
 
   state.socket.on('session-ended', () => {
-    alert('📢 主持人或房管已结束并关闭了本次 KTV 歌会会话。');
+    alert(t('session-ended-alert'));
     window.location.href = window.location.origin + window.location.pathname;
   });
 
   state.socket.on('join-failed', (data) => {
-    alert(data.message);
+    alert(translatedPayloadText(data, 'message'));
   });
 
   state.socket.on('kicked', (data) => {
     if (data.reason === 'kicked_by_admin') {
-      alert('您已被房主或管理员移出当前房间！');
+      alert(t('kicked-by-admin'));
     } else if (data.reason === 'session_takeover') {
-      alert('您的歌手ID在另一个窗口重新登入，当前连接已断开！');
+      alert(t('kicked-session-takeover'));
     }
     // Redirect back to home without queries
     window.location.href = window.location.origin + window.location.pathname;

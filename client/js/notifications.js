@@ -1,4 +1,5 @@
 import { appendText, clearChildren, createElement } from './dom.js';
+import { t } from './i18n.js';
 import { state } from './state.js';
 
 function getToastIcon(type) {
@@ -121,7 +122,7 @@ export function updateToastHistoryUI() {
     list.appendChild(
       createElement('div', {
         className: 'no-history-msg',
-        text: '暂无此类型的历史消息'
+        text: t('empty-filter-history')
       })
     );
     return;
@@ -179,7 +180,7 @@ export function updateMessagesEmptyState() {
       emptyMsg = document.createElement('div');
       emptyMsg.id = 'no-messages-msg';
       emptyMsg.className = 'no-history-msg';
-      emptyMsg.textContent = '暂无消息';
+      emptyMsg.textContent = t('no-messages-msg');
       list.appendChild(emptyMsg);
     }
     emptyMsg.style.display = 'block';
@@ -190,7 +191,7 @@ export function updateMessagesEmptyState() {
 
 export function showDedicationRequestModal(data) {
   // Add to toast history with type "dedicate" so it appears in the activity feed
-  showToast('dedicate', `🎁 ${data.fromUsername} 为你指名点播了《${data.title}》`);
+  showToast('dedicate', t('dedication-toast', { username: data.fromUsername, title: data.title }));
 
   const list = document.getElementById('pending-dedications-list');
   if (!list) return;
@@ -215,7 +216,7 @@ export function showDedicationRequestModal(data) {
   appendText(titleRow, ` ${data.fromUsername || ''} `);
   titleRow.appendChild(
     createElement('span', {
-      text: '为你指名',
+      text: t('dedicate-for-you'),
       style: 'font-weight: normal; font-size: 0.85rem; color: var(--text-secondary);'
     })
   );
@@ -229,13 +230,13 @@ export function showDedicationRequestModal(data) {
       createElement('button', {
         type: 'button',
         className: 'btn btn-primary accept-dedication-btn',
-        text: '接受',
+        text: t('dedicate-accept'),
         style: 'flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px;'
       }),
       createElement('button', {
         type: 'button',
         className: 'btn decline-dedication-btn',
-        text: '拒绝',
+        text: t('dedicate-decline'),
         style:
           'flex: 1; padding: 6px; font-size: 0.85rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;'
       })
@@ -245,7 +246,7 @@ export function showDedicationRequestModal(data) {
   card.appendChild(titleRow);
   card.appendChild(
     createElement('div', {
-      text: `《${data.title}》- ${data.singer || '未知'}`,
+      text: `《${data.title}》- ${data.singer || t('unknown-singer-short')}`,
       style: 'font-size: 0.9rem; margin-bottom: 12px;'
     })
   );

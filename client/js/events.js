@@ -1,5 +1,6 @@
 import { resizeAndSetAvatar, setAvatarElement, updateAvatarPreview } from './avatar.js';
-import { emojis, randomNames } from './data.js';
+import { emojis, getRandomNames } from './data.js';
+import { t, translatePage } from './i18n.js';
 import { state } from './state.js';
 
 // Helper: Setup Client Interaction DOM Listeners
@@ -10,16 +11,26 @@ export function setupEventListeners(deps) {
     handleLoginJoin,
     openArchiveModal,
     playSound,
+    renderHistory,
+    renderHistoryRooms,
+    renderAppVersion,
+    renderMembers,
+    renderPlaylist,
+    renderSuggestions,
     renderStats,
     showToast,
+    updateDedicateSelect,
+    updateMessagesEmptyState,
+    updateNowPlaying,
     updateToastHistoryUI,
     updateWidgetUI
   } = deps;
   // Random Name button inside Login
   document.getElementById('randomize-name-btn').addEventListener('click', () => {
-    const idx = Math.floor(Math.random() * randomNames.length);
+    const names = getRandomNames(state.language);
+    const idx = Math.floor(Math.random() * names.length);
     const code = Math.floor(100 + Math.random() * 900); // add number tag
-    const randomNick = randomNames[idx] + '#' + code;
+    const randomNick = names[idx] + '#' + code;
     document.getElementById('setup-username').value = randomNick;
   });
 
@@ -110,12 +121,12 @@ export function setupEventListeners(deps) {
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
-        showToast('shuffle', '📋 分享链接已复制到剪贴板！可以直接发送给好友！');
+        showToast('shuffle', t('clipboard-success'));
       })
       .catch((err) => {
         console.error('Copy failed', err);
         // Fallback alert
-        alert(`当前分享链接：${shareUrl}`);
+        alert(t('clipboard-fallback', { url: shareUrl }));
       });
   });
 
@@ -229,7 +240,7 @@ export function setupEventListeners(deps) {
     const newAvatar = document.getElementById('modal-avatar-preview').dataset.selectedEmoji || state.currentAvatar;
 
     if (!newName) {
-      alert('昵称不能为空！');
+      alert(t('error-nickname-empty'));
       return;
     }
 
@@ -328,9 +339,9 @@ export function setupEventListeners(deps) {
   const endSessionBtn = document.getElementById('end-session-btn');
   if (endSessionBtn) {
     endSessionBtn.addEventListener('click', () => {
-      if (confirm('⚠️ 警告：您确定要结束本次歌会吗？这将会清空所有歌单、切歌历史并重置房间状态！')) {
-        if (confirm('⚠️⚠️ 请再次确认：此操作将清空整个房间的歌单，所有排队歌曲以及历史记录均会丢失！确定继续吗？')) {
-          if (confirm('🚨🚨🚨 最终安全确认：您真的要立即结束本次 KTV 歌会吗？')) {
+      if (confirm(t('confirm-end-session-1'))) {
+        if (confirm(t('confirm-end-session-2'))) {
+          if (confirm(t('confirm-end-session-3'))) {
             state.socket.emit('end-session');
           }
         }
@@ -345,9 +356,9 @@ export function setupEventListeners(deps) {
   const updateThemeButtonUI = (isLight) => {
     if (!themeToggleBtn) return;
     if (isLight) {
-      themeToggleBtn.innerHTML = `<i class="fa-solid fa-moon"></i> 切换为暗色主题`;
+      themeToggleBtn.innerHTML = `<i class="fa-solid fa-moon"></i>${t('theme-toggle-dark')}`;
     } else {
-      themeToggleBtn.innerHTML = `<i class="fa-solid fa-sun"></i> 切换为亮色主题`;
+      themeToggleBtn.innerHTML = `<i class="fa-solid fa-sun"></i>${t('theme-toggle-light')}`;
     }
   };
 
@@ -374,9 +385,9 @@ export function setupEventListeners(deps) {
   const updateCompactButtonUI = (isCompact) => {
     if (!compactToggleBtn) return;
     if (isCompact) {
-      compactToggleBtn.innerHTML = `<i class="fa-solid fa-expand"></i> 切换为常规模式`;
+      compactToggleBtn.innerHTML = `<i class="fa-solid fa-expand"></i>${t('compact-toggle-regular')}`;
     } else {
-      compactToggleBtn.innerHTML = `<i class="fa-solid fa-compress"></i> 切换为紧凑模式`;
+      compactToggleBtn.innerHTML = `<i class="fa-solid fa-compress"></i>${t('compact-toggle-compact')}`;
     }
   };
 
@@ -445,7 +456,7 @@ export function setupEventListeners(deps) {
   giftButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       if (state.playlist.length === 0) {
-        showToast('delete', '❌ 当前没有正在演唱的歌曲，无法发送互动！');
+        showToast('delete', t('reaction-no-song'));
         return;
       }
       const reactionType = btn.dataset.reaction;
@@ -466,11 +477,11 @@ export function setupEventListeners(deps) {
       if (state.isSoundMuted) {
         muteBtn.classList.add('muted');
         muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
-        showToast('info', '🔇 互动礼物音效已静音');
+        showToast('info', t('reaction-mute-toast'));
       } else {
         muteBtn.classList.remove('muted');
         muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-        showToast('info', '🔊 互动礼物音效已开启');
+        showToast('info', t('reaction-unmute-toast'));
         playSound('rose');
       }
     });
@@ -485,4 +496,58 @@ export function setupEventListeners(deps) {
     downloadSessionArchive();
     closeArchiveModal();
   });
+
+  // ── Language Switcher ──────────────────────────────────────
+  // Helper: apply language, persist, re-render UI
+  function switchLanguage(lang) {
+    state.language = lang;
+    localStorage.setItem('shareq_lang', lang);
+    translatePage();
+
+    // Highlight the correct lobby button
+    document.querySelectorAll('.lang-switch-lobby .lang-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+
+    // Re-render dynamic button text that uses innerHTML (not data-i18n)
+    const isLight = document.body.classList.contains('light-theme');
+    updateThemeButtonUI(isLight);
+    const isCompact = document.body.classList.contains('compact-mode');
+    updateCompactButtonUI(isCompact);
+
+    renderHistoryRooms();
+    renderAppVersion();
+    renderSuggestions();
+    renderPlaylist();
+    renderHistory();
+    renderMembers();
+    updateDedicateSelect();
+    updateNowPlaying();
+    updateMessagesEmptyState();
+    updateToastHistoryUI();
+
+    const statsContainer = document.getElementById('stats-playlist-container');
+    if (statsContainer && !statsContainer.classList.contains('hidden')) {
+      renderStats();
+    }
+  }
+
+  // Mark the active lobby button on load
+  document.querySelectorAll('.lang-switch-lobby .lang-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.lang === state.language);
+    btn.addEventListener('click', () => {
+      switchLanguage(btn.dataset.lang);
+    });
+  });
+
+  // Settings dropdown language toggle (toggles between zh-CN and en)
+  const langToggleBtn = document.getElementById('dropdown-lang-toggle-btn');
+  if (langToggleBtn) {
+    langToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newLang = state.language === 'zh-CN' ? 'en' : 'zh-CN';
+      switchLanguage(newLang);
+      adminDropdownMenu.classList.add('hidden');
+    });
+  }
 }

@@ -22,30 +22,37 @@
   <body>
     <div class="app-container">
       <!-- LOGIN / ENTRY VIEW -->
-      <div id="login-view" class="view-card">
+      <div id="login-view" class="view-card" style="position: relative;">
+        <!-- Lobby Language Switcher -->
+        <div class="lang-switch-lobby">
+          <button type="button" class="lang-btn" data-lang="zh-CN">中文</button>
+          <span class="lang-divider">|</span>
+          <button type="button" class="lang-btn" data-lang="en">EN</button>
+        </div>
         <div class="brand-header animate-glow">
           <div class="logo-icon"><i class="fa-solid fa-microphone-lines"></i></div>
           <h1 id="lobby-logo" style="cursor: pointer" title="ShareQ 共享卡拉OK歌单系统 by uucky">ShareQ</h1>
-          <p class="subtitle">KTV 实时点歌歌单</p>
+          <p class="subtitle" data-i18n="lobby-subtitle">KTV 实时点歌歌单</p>
         </div>
 
         <div class="form-container">
           <!-- Step 1: User Profile Selection -->
           <div class="section-title">
             <span class="step-num">1</span>
-            <h3>设置你的歌手档案</h3>
+            <h3 data-i18n="setup-profile-title">设置你的歌手档案</h3>
           </div>
 
           <div class="profile-setup">
             <div class="avatar-preview-wrapper">
               <div id="setup-avatar-preview" class="avatar-circle pulse-glow">🎤</div>
-              <button type="button" id="randomize-avatar-btn" class="icon-btn-secondary" title="随机生成">
+              <button type="button" id="randomize-avatar-btn" class="icon-btn-secondary" data-i18n-title="title-random-gen" title="随机生成">
                 <i class="fa-solid fa-shuffle"></i>
               </button>
               <button
                 type="button"
                 id="setup-upload-avatar-btn"
                 class="icon-btn-secondary upload-avatar-trigger-btn"
+                data-i18n-title="title-upload-avatar"
                 title="上传头像图片"
               >
                 <i class="fa-solid fa-camera"></i>
@@ -54,10 +61,10 @@
             </div>
 
             <div class="input-group">
-              <label for="setup-username">歌手昵称</label>
+              <label for="setup-username" data-i18n="setup-username-label">歌手昵称</label>
               <div class="input-with-action">
-                <input type="text" id="setup-username" placeholder="请输入你的大名..." maxlength="15" />
-                <button type="button" id="randomize-name-btn" class="btn-text">随机</button>
+                <input type="text" id="setup-username" data-i18n-placeholder="setup-username-placeholder" placeholder="请输入你的大名..." maxlength="15" />
+                <button type="button" id="randomize-name-btn" class="btn-text" data-i18n="random-btn">随机</button>
               </div>
             </div>
           </div>
@@ -69,22 +76,22 @@
           <!-- Step 2: Join or Create Room -->
           <div class="section-title">
             <span class="step-num">2</span>
-            <h3>进入 KTV 房间</h3>
+            <h3 data-i18n="enter-room-title">进入 KTV 房间</h3>
           </div>
 
           <div class="tab-container">
-            <button type="button" class="tab-btn active" data-tab="join">加入房间</button>
-            <button type="button" class="tab-btn" data-tab="create">创建新房间</button>
+            <button type="button" class="tab-btn active" data-tab="join" data-i18n="tab-join">加入房间</button>
+            <button type="button" class="tab-btn" data-tab="create" data-i18n="tab-create">创建新房间</button>
           </div>
 
           <!-- Join Form -->
           <div id="tab-join-content" class="tab-content active">
             <div class="input-group">
-              <label for="room-id-input">房间号 (Room Number)</label>
-              <input type="text" id="room-id-input" placeholder="输入 4-6 位数字或字母房号" maxlength="10" />
+              <label for="room-id-input" data-i18n="room-id-label">房间号 (Room Number)</label>
+              <input type="text" id="room-id-input" data-i18n-placeholder="room-id-placeholder" placeholder="输入 4-6 位数字或字母房号" maxlength="10" />
             </div>
             <button type="button" id="join-room-btn" class="btn btn-primary btn-block">
-              <i class="fa-solid fa-arrow-right-to-bracket"></i> 确认进入房间
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> <span data-i18n="join-room-btn-text">确认进入房间</span>
             </button>
 
             <!-- Previously Joined Rooms List -->
@@ -103,7 +110,7 @@
                   letter-spacing: 0.03em;
                 "
               >
-                <i class="fa-solid fa-clock-rotate-left"></i> 最近加入的歌房
+                <i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="recent-rooms-text">最近加入的歌房</span>
               </label>
               <div
                 id="history-rooms-list"
@@ -124,10 +131,10 @@
           <!-- Create Form -->
           <div id="tab-create-content" class="tab-content">
             <div class="create-room-info">
-              <p>系统将随机生成一个唯一的房间号，您可以将链接发给朋友，大家即可加入同一个房间实时点歌！</p>
+              <p data-i18n="create-room-info">系统将随机生成一个唯一的房间号，您可以将链接发给朋友，大家即可加入同一个房间实时点歌！</p>
             </div>
             <button type="button" id="create-room-btn" class="btn btn-success btn-block">
-              <i class="fa-solid fa-square-plus"></i> 创建并开启点歌房
+              <i class="fa-solid fa-square-plus"></i> <span data-i18n="create-room-btn-text">创建并开启点歌房</span>
             </button>
           </div>
         </div>
@@ -143,7 +150,7 @@
         <!-- HEADER -->
         <header class="room-header">
           <div class="header-left">
-            <button type="button" id="leave-room-btn" class="btn-back-home" title="返回首页重新输入房间号">
+            <button type="button" id="leave-room-btn" class="btn-back-home" data-i18n-title="title-back-home" title="返回首页重新输入房间号">
               <i class="fa-solid fa-house"></i>
             </button>
             <div
@@ -155,8 +162,8 @@
               <i class="fa-solid fa-microphone-lines"></i>
               <span class="brand-text">ShareQ</span>
             </div>
-            <div class="room-badge" id="room-badge-btn" title="点击复制分享链接">
-              <span class="badge-label">房间号:</span>
+            <div class="room-badge" id="room-badge-btn" data-i18n-title="title-copy-link" title="点击复制分享链接">
+              <span class="badge-label" data-i18n="room-badge-label">房间号:</span>
               <span id="display-room-id" class="badge-value">------</span>
               <i class="fa-solid fa-copy"></i>
             </div>
@@ -164,7 +171,7 @@
 
           <!-- Online Users Count -->
           <div class="header-center">
-            <div class="online-users-wrapper" id="users-stack-trigger" title="双击导出歌单存档" style="cursor: pointer">
+            <div class="online-users-wrapper" id="users-stack-trigger" data-i18n-title="title-double-click-export" title="双击导出歌单存档" style="cursor: pointer">
               <div class="online-users-list" id="users-stack">
                 <!-- Overlapping avatars here -->
               </div>
@@ -176,7 +183,7 @@
           <div class="header-right">
             <!-- Dropdown Settings & Admin Controls Menu -->
             <div class="admin-menu-container hidden" id="admin-menu-container">
-              <button type="button" id="admin-menu-btn" class="icon-btn-secondary" title="更多选项">
+              <button type="button" id="admin-menu-btn" class="icon-btn-secondary" data-i18n-title="title-more-options" title="更多选项">
                 <i class="fa-solid fa-ellipsis-vertical"></i>
               </button>
               <div class="admin-dropdown-menu hidden" id="admin-dropdown-menu">
@@ -187,35 +194,39 @@
                 <button type="button" id="dropdown-compact-toggle-btn" class="dropdown-item">
                   <i class="fa-solid fa-compress"></i> 切换紧凑模式 (Compact)
                 </button>
+                <!-- Language switcher in settings -->
+                <button type="button" id="dropdown-lang-toggle-btn" class="dropdown-item">
+                  <i class="fa-solid fa-globe"></i> <span data-i18n="lang-toggle-label">切换为 English</span>
+                </button>
                 <button type="button" id="dropdown-stats-btn" class="dropdown-item">
-                  <i class="fa-solid fa-chart-simple"></i> 歌会数据统计 (Stats)
+                  <i class="fa-solid fa-chart-simple"></i> <span data-i18n="dropdown-stats-text">歌会数据统计 (Stats)</span>
                 </button>
                 <button type="button" id="dropdown-about-btn" class="dropdown-item">
-                  <i class="fa-solid fa-circle-info"></i> 关于 ShareQ
+                  <i class="fa-solid fa-circle-info"></i> <span data-i18n="dropdown-about-text">关于 ShareQ</span>
                 </button>
 
                 <!-- Admin only section -->
                 <div id="admin-only-section" class="admin-only-section">
-                  <div class="dropdown-label"><i class="fa-solid fa-shield-halved"></i> 管理员特权</div>
+                  <div class="dropdown-label"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="admin-section-label">管理员特权</span></div>
                   <button type="button" id="undo-btn" class="dropdown-item">
-                    <i class="fa-solid fa-rotate-left"></i> 撤销操作 (Undo)
+                    <i class="fa-solid fa-rotate-left"></i> <span data-i18n="dropdown-undo-text">撤销操作 (Undo)</span>
                   </button>
                   <button type="button" id="redo-btn" class="dropdown-item">
-                    <i class="fa-solid fa-rotate-right"></i> 重做操作 (Redo)
+                    <i class="fa-solid fa-rotate-right"></i> <span data-i18n="dropdown-redo-text">重做操作 (Redo)</span>
                   </button>
                   <button type="button" id="prev-btn" class="dropdown-item">
-                    <i class="fa-solid fa-backward-step"></i> 播放上一首 (Previous)
+                    <i class="fa-solid fa-backward-step"></i> <span data-i18n="dropdown-prev-text">播放上一首 (Previous)</span>
                   </button>
                   <button type="button" id="end-session-btn" class="dropdown-item dropdown-item-danger">
-                    <i class="fa-solid fa-circle-xmark"></i> 结束本次歌会 (End Session)
+                    <i class="fa-solid fa-circle-xmark"></i> <span data-i18n="dropdown-end-text">结束本次歌会 (End Session)</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            <button type="button" id="user-profile-widget" class="profile-widget" title="修改歌手昵称/头像">
-              <span id="user-widget-name" class="widget-name">未登录</span>
-              <span id="user-widget-id" class="widget-id">ID: --</span>
+            <button type="button" id="user-profile-widget" class="profile-widget" data-i18n-title="title-edit-profile" title="修改歌手昵称/头像">
+              <span id="user-widget-name" class="widget-name" data-i18n="widget-default-name">未登录</span>
+              <span id="user-widget-id" class="widget-id" data-i18n="widget-default-id">ID: --</span>
               <div id="user-widget-avatar" class="avatar-circle-sm">🎤</div>
             </button>
           </div>
@@ -228,54 +239,54 @@
             <!-- Request Song Card -->
             <div class="glass-card">
               <div class="card-header">
-                <h2><i class="fa-solid fa-music"></i> 点歌机 / Request</h2>
-                <p class="card-subtitle">麦克风已就绪，点一首最爱的歌吧！</p>
+                <h2><i class="fa-solid fa-music"></i> <span data-i18n="request-card-title-text">点歌机 / Request</span></h2>
+                <p class="card-subtitle" data-i18n="request-card-subtitle">麦克风已就绪，点一首最爱的歌吧！</p>
               </div>
 
               <form id="song-request-form" class="request-form">
                 <div class="input-group">
-                  <label for="song-title">歌曲名 <span class="required">*</span></label>
+                  <label for="song-title"><span data-i18n="song-title-label">歌曲名</span> <span class="required">*</span></label>
                   <div class="input-wrapper">
                     <i class="fa-solid fa-circle-play input-icon"></i>
-                    <input type="text" id="song-title" placeholder="例如：七里香" required autocomplete="off" />
+                    <input type="text" id="song-title" data-i18n-placeholder="song-title-placeholder" placeholder="例如：七里香" required autocomplete="off" />
                   </div>
                 </div>
 
                 <div class="input-group">
-                  <label for="song-singer">歌手名字 <span class="optional">(可选)</span></label>
+                  <label for="song-singer"><span data-i18n="song-singer-label">歌手名字</span> <span class="optional" data-i18n="song-singer-optional">(可选)</span></label>
                   <div class="input-wrapper">
                     <i class="fa-solid fa-user-astronaut input-icon"></i>
-                    <input type="text" id="song-singer" placeholder="例如：周杰伦" autocomplete="off" />
+                    <input type="text" id="song-singer" data-i18n-placeholder="song-singer-placeholder" placeholder="例如：周杰伦" autocomplete="off" />
                   </div>
                 </div>
 
                 <div class="input-group">
-                  <label for="song-link">伴奏链接 <span class="optional">(可选，如 YouTube/B站等)</span></label>
+                  <label for="song-link"><span data-i18n="song-link-label">伴奏链接</span> <span class="optional" data-i18n="song-link-optional">(可选，如 YouTube/B站等)</span></label>
                   <div class="input-wrapper">
                     <i class="fa-solid fa-link input-icon"></i>
-                    <input type="text" id="song-link" placeholder="例如：https://youtube.com/..." autocomplete="off" />
+                    <input type="text" id="song-link" data-i18n-placeholder="song-link-placeholder" placeholder="例如：https://youtube.com/..." autocomplete="off" />
                   </div>
                 </div>
 
                 <div class="input-group">
-                  <label for="song-dedicate">指名点歌给某人 <span class="optional">(可选)</span></label>
+                  <label for="song-dedicate"><span data-i18n="song-dedicate-label">指名点歌给某人</span> <span class="optional" data-i18n="song-dedicate-optional">(可选)</span></label>
                   <div class="input-wrapper">
                     <i class="fa-solid fa-gift input-icon"></i>
                     <select id="song-dedicate" class="custom-select">
-                      <option value="">-- 自己唱 (默认) --</option>
+                      <option value="" data-i18n="song-dedicate-default">-- 自己唱 (默认) --</option>
                     </select>
                   </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block submit-btn" id="confirm-request-btn">
-                  <span class="btn-text">确认点歌 / Add to Queue</span>
+                  <span class="btn-text" data-i18n="confirm-request-btn">确认点歌 / Add to Queue</span>
                   <span class="btn-glow"></span>
                 </button>
               </form>
 
               <!-- Quick Suggestions -->
               <div class="suggestions-container">
-                <h4>🔥 热门 KTV 点播推荐</h4>
+                <h4 data-i18n="popular-title">🔥 热门 KTV 点播推荐</h4>
                 <div class="suggestions-tags" id="suggestions-tags">
                   <!-- Autopopulated -->
                 </div>
@@ -285,8 +296,8 @@
             <!-- Room Members / User List Card -->
             <div class="glass-card">
               <div class="card-header">
-                <h2><i class="fa-solid fa-users"></i> 房间成员 / Members</h2>
-                <p class="card-subtitle">当前在线的好友及身份权限</p>
+                <h2><i class="fa-solid fa-users"></i> <span data-i18n="members-title-text">房间成员 / Members</span></h2>
+                <p class="card-subtitle" data-i18n="members-subtitle">当前在线的好友及身份权限</p>
               </div>
               <div class="members-container" id="members-list-container">
                 <!-- Rendered via Javascript -->
@@ -299,16 +310,17 @@
             <!-- ENLARGED NOW PLAYING HIGHLIGHT PANEL -->
             <div class="now-playing-panel glass-card enlarged-playing" id="now-playing-panel">
               <div class="playing-header">
-                <div class="playing-label"><span class="indicator-dot blinking"></span> 正在演唱 / Now Playing</div>
+                <div class="playing-label"><span class="indicator-dot blinking"></span> <span data-i18n="now-playing-label-text">正在演唱 / Now Playing</span></div>
                 <!-- Accompaniment Link Button -->
                 <a
                   href="#"
                   target="_blank"
                   id="playing-link-btn"
                   class="accompaniment-btn hidden"
+                  data-i18n-title="title-accompaniment-link"
                   title="打开点歌人提供的伴奏链接"
                 >
-                  <i class="fa-solid fa-up-right-from-square"></i> 打开伴奏链接
+                  <i class="fa-solid fa-up-right-from-square"></i> <span data-i18n="now-playing-link-text">打开伴奏链接</span>
                 </a>
               </div>
 
@@ -386,12 +398,13 @@
                     align-items: center;
                   "
                 >
-                  <h3 id="playing-title" class="playing-title-large" style="font-size: 2.2rem; margin-bottom: 4px">
+                  <h3 id="playing-title" class="playing-title-large" data-i18n="now-playing-empty-title" style="font-size: 2.2rem; margin-bottom: 4px">
                     等待点歌...
                   </h3>
                   <p
                     id="playing-singer"
                     class="playing-singer-large"
+                    data-i18n="now-playing-empty-subtitle"
                     style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 12px"
                   >
                     点歌后即可在歌单开始
@@ -433,23 +446,23 @@
                   class="audience-actions-header"
                   style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px"
                 >
-                  <span class="audience-action-title" style="margin-bottom: 0">给歌手互动送礼：</span>
-                  <button type="button" class="btn-reaction-mute" id="btn-reaction-mute" title="静音/取消静音礼物音效">
+                  <span class="audience-action-title" data-i18n="reaction-gift-label" style="margin-bottom: 0">给歌手互动送礼：</span>
+                  <button type="button" class="btn-reaction-mute" id="btn-reaction-mute" data-i18n-title="title-gift-mute" title="静音/取消静音礼物音效">
                     <i class="fa-solid fa-volume-high"></i>
                   </button>
                 </div>
                 <div class="reaction-buttons-grid">
-                  <button type="button" class="btn-reaction-gift" data-reaction="rose" title="送上玫瑰花 (Rose)">
-                    <span class="gift-emoji">🌹</span> 玫瑰花
+                  <button type="button" class="btn-reaction-gift" data-reaction="rose" data-i18n-title="title-gift-rose" title="送上玫瑰花 (Rose)">
+                    <span class="gift-emoji">🌹</span> <span data-i18n="reaction-rose">玫瑰花</span>
                   </button>
-                  <button type="button" class="btn-reaction-gift" data-reaction="clap" title="热烈鼓掌 (Applause)">
-                    <span class="gift-emoji">👏</span> 鼓掌
+                  <button type="button" class="btn-reaction-gift" data-reaction="clap" data-i18n-title="title-gift-clap" title="热烈鼓掌 (Applause)">
+                    <span class="gift-emoji">👏</span> <span data-i18n="reaction-clap">鼓掌</span>
                   </button>
-                  <button type="button" class="btn-reaction-gift" data-reaction="egg" title="扔臭鸡蛋 (Egg)">
-                    <span class="gift-emoji">🥚</span> 扔鸡蛋
+                  <button type="button" class="btn-reaction-gift" data-reaction="egg" data-i18n-title="title-gift-egg" title="扔臭鸡蛋 (Egg)">
+                    <span class="gift-emoji">🥚</span> <span data-i18n="reaction-egg">扔鸡蛋</span>
                   </button>
-                  <button type="button" class="btn-reaction-gift" data-reaction="shoe" title="扔旧皮鞋 (Shoe)">
-                    <span class="gift-emoji">👞</span> 丢皮鞋
+                  <button type="button" class="btn-reaction-gift" data-reaction="shoe" data-i18n-title="title-gift-shoe" title="扔旧皮鞋 (Shoe)">
+                    <span class="gift-emoji">👞</span> <span data-i18n="reaction-shoe">丢皮鞋</span>
                   </button>
                 </div>
               </div>
@@ -461,15 +474,15 @@
                 <!-- Tabs Navigation -->
                 <div class="playlist-tabs">
                   <button type="button" class="playlist-tab-btn active" id="tab-upcoming-btn">
-                    <i class="fa-solid fa-list-ul"></i> 已点
+                    <i class="fa-solid fa-list-ul"></i> <span data-i18n="tab-upcoming-text">已点</span>
                     <span id="song-count-badge" class="counter-badge">0 首</span>
                   </button>
                   <button type="button" class="playlist-tab-btn" id="tab-history-btn">
-                    <i class="fa-solid fa-clock-rotate-left"></i> 已唱
+                    <i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="tab-history-text">已唱</span>
                     <span id="history-count-badge" class="counter-badge">0 首</span>
                   </button>
                   <button type="button" class="playlist-tab-btn hidden" id="tab-stats-btn">
-                    <i class="fa-solid fa-chart-simple"></i> 歌会统计 / Stats
+                    <i class="fa-solid fa-chart-simple"></i> <span data-i18n="tab-stats-tab-text">歌会统计 / Stats</span>
                   </button>
                 </div>
 
@@ -479,17 +492,19 @@
                     type="button"
                     id="shuffle-btn"
                     class="btn-action btn-action-orange"
+                    data-i18n-title="title-shuffle-desc"
                     title="打乱所有未优先歌曲的顺序"
                   >
-                    <i class="fa-solid fa-shuffle"></i> 打乱歌单
+                    <i class="fa-solid fa-shuffle"></i> <span data-i18n="shuffle-btn-text">打乱歌单</span>
                   </button>
                   <button
                     type="button"
                     id="next-btn"
                     class="btn-action btn-action-purple hidden"
+                    data-i18n-title="title-next-desc"
                     title="切歌 (仅主持人/房管)"
                   >
-                    <i class="fa-solid fa-forward-step"></i> 切歌
+                    <i class="fa-solid fa-forward-step"></i> <span data-i18n="next-btn-text">切歌</span>
                   </button>
                 </div>
               </div>
@@ -519,7 +534,7 @@
                 class="card-header"
                 style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center"
               >
-                <h2 style="font-size: 1.1rem"><i class="fa-solid fa-envelope"></i> 消息</h2>
+                <h2 style="font-size: 1.1rem"><i class="fa-solid fa-envelope"></i> <span data-i18n="messages-title-text">消息</span></h2>
                 <span id="toast-history-badge" class="history-badge hidden">0</span>
               </div>
               <div id="pending-dedications-list" style="display: flex; flex-direction: column; gap: 8px">
@@ -537,6 +552,7 @@
                   text-transform: uppercase;
                   letter-spacing: 1px;
                 "
+                data-i18n="activities-title"
               >
                 动态
               </h3>
@@ -553,11 +569,11 @@
                   margin-bottom: 12px;
                 "
               >
-                <a href="#" class="toast-filter-link active" data-filter="all">全部</a>
-                <a href="#" class="toast-filter-link" data-filter="add">点歌</a>
-                <a href="#" class="toast-filter-link" data-filter="pin">优先</a>
-                <a href="#" class="toast-filter-link" data-filter="delete">删除</a>
-                <a href="#" class="toast-filter-link" data-filter="next">切歌</a>
+                <a href="#" class="toast-filter-link active" data-filter="all" data-i18n="filter-all">全部</a>
+                <a href="#" class="toast-filter-link" data-filter="add" data-i18n="filter-add">点歌</a>
+                <a href="#" class="toast-filter-link" data-filter="pin" data-i18n="filter-pin">优先</a>
+                <a href="#" class="toast-filter-link" data-filter="delete" data-i18n="filter-delete">删除</a>
+                <a href="#" class="toast-filter-link" data-filter="next" data-i18n="filter-next">切歌</a>
               </div>
 
               <div
@@ -565,7 +581,7 @@
                 id="toast-history-list"
                 style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px"
               >
-                <div class="no-history-msg">暂无动态记录</div>
+                <div class="no-history-msg" data-i18n="no-history-msg">暂无动态记录</div>
               </div>
             </div>
           </section>
@@ -574,7 +590,7 @@
     </div>
 
     <!-- Mobile Floating Bell Button -->
-    <div class="toast-history-trigger hidden-desktop" id="mobile-toast-trigger" title="消息与动态">
+    <div class="toast-history-trigger hidden-desktop" id="mobile-toast-trigger" data-i18n-title="title-bell-desc" title="消息与动态">
       <i class="fa-solid fa-bell"></i>
       <span class="history-badge hidden" id="mobile-toast-badge">0</span>
     </div>
@@ -583,20 +599,21 @@
     <div id="profile-modal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>修改个人歌手信息</h3>
+          <h3 data-i18n="modal-profile-title">修改个人歌手信息</h3>
           <button type="button" class="close-modal-btn" id="close-modal-btn">&times;</button>
         </div>
         <div class="modal-body">
           <div class="profile-setup">
             <div class="avatar-preview-wrapper">
               <div id="modal-avatar-preview" class="avatar-circle">🎤</div>
-              <button type="button" id="modal-random-avatar-btn" class="icon-btn-secondary" title="随机生成">
+              <button type="button" id="modal-random-avatar-btn" class="icon-btn-secondary" data-i18n-title="title-random-gen" title="随机生成">
                 <i class="fa-solid fa-shuffle"></i>
               </button>
               <button
                 type="button"
                 id="modal-upload-avatar-btn"
                 class="icon-btn-secondary upload-avatar-trigger-btn"
+                data-i18n-title="title-upload-avatar"
                 title="上传头像图片"
               >
                 <i class="fa-solid fa-camera"></i>
@@ -604,19 +621,19 @@
               <input type="file" id="modal-avatar-file" accept="image/*" style="display: none" />
             </div>
             <div class="input-group">
-              <label for="modal-username">修改昵称</label>
-              <input type="text" id="modal-username" placeholder="请输入你的新大名..." maxlength="15" />
+              <label for="modal-username" data-i18n="modal-username-label">修改昵称</label>
+              <input type="text" id="modal-username" data-i18n-placeholder="modal-username-placeholder" placeholder="请输入你的新大名..." maxlength="15" />
             </div>
           </div>
 
-          <label class="section-label">选择新的卡通表情</label>
+          <label class="section-label" data-i18n="modal-avatar-label">选择新的卡通表情</label>
           <div class="avatar-selector-grid" id="modal-avatar-grid">
             <!-- Filled dynamically -->
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">取消</button>
-          <button type="button" class="btn btn-primary" id="modal-save-btn">保存更改</button>
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn" data-i18n="modal-cancel-btn">取消</button>
+          <button type="button" class="btn btn-primary" id="modal-save-btn" data-i18n="modal-save-btn">保存更改</button>
         </div>
       </div>
     </div>
@@ -625,25 +642,25 @@
     <div id="archive-modal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>🎉 隐藏彩蛋：导出 KTV 歌单存档</h3>
+          <h3 data-i18n="modal-archive-title">🎉 隐藏彩蛋：导出 KTV 歌单存档</h3>
           <button type="button" class="close-modal-btn" id="close-archive-modal-btn">&times;</button>
         </div>
         <div class="modal-body text-center">
           <div style="font-size: 3.5rem; margin-bottom: 15px; color: var(--color-success)">
             <i class="fa-solid fa-file-invoice"></i>
           </div>
-          <p style="margin-bottom: 20px">
+          <p style="margin-bottom: 20px" data-i18n="modal-archive-p1">
             恭喜你发现了隐藏入口！本功能将打包生成一份本次 KTV
             演唱会话的精美网页报告，包括<strong>已唱歌单</strong>与<strong>待播歌单</strong>，记录下点歌顺序、演唱完成时间以及观众对各首歌曲的玫瑰、掌声、鸡蛋等热烈互动数据。
           </p>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px" data-i18n="modal-archive-p2">
             导出的 HTML 文件自带交互排序逻辑，双击打开即可通过表头对歌曲、歌手、点歌人或互动评分进行过滤与重新排序。
           </p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" id="archive-cancel-btn">关闭</button>
+          <button type="button" class="btn btn-secondary" id="archive-cancel-btn" data-i18n="modal-archive-cancel">关闭</button>
           <button type="button" class="btn btn-success" id="archive-download-btn">
-            <i class="fa-solid fa-download"></i> 一键下载报告 (HTML)
+            <i class="fa-solid fa-download"></i> <span data-i18n="modal-archive-download">一键下载报告 (HTML)</span>
           </button>
         </div>
       </div>
@@ -653,7 +670,7 @@
     <div id="about-modal" class="modal-overlay hidden">
       <div class="modal-card" style="max-width: 420px; text-align: center">
         <div class="modal-header">
-          <h3><i class="fa-solid fa-circle-info"></i> 关于 ShareQ</h3>
+          <h3><i class="fa-solid fa-circle-info"></i> <span data-i18n="modal-about-title">关于 ShareQ</span></h3>
           <button type="button" class="close-modal-btn" id="close-about-modal-btn">&times;</button>
         </div>
         <div class="modal-body" style="padding: 28px 24px">
@@ -681,7 +698,7 @@
           >
             ShareQ
           </h2>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 20px 0">共享卡拉OK歌单系统</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 20px 0" data-i18n="lobby-subtitle">共享卡拉OK歌单系统</p>
           <div
             style="
               background: rgba(255, 255, 255, 0.04);
@@ -695,25 +712,24 @@
             "
           >
             <div style="margin-bottom: 8px">
-              <i class="fa-solid fa-user" style="color: var(--color-primary); width: 18px"></i> &nbsp;作者：<strong
+              <i class="fa-solid fa-user" style="color: var(--color-primary); width: 18px"></i> &nbsp;<span data-i18n="modal-about-author">作者：</span><strong
                 >uucky</strong
               >
             </div>
             <div style="margin-bottom: 8px">
               <i class="fa-solid fa-code-branch" style="color: var(--color-secondary); width: 18px"></i>
-              &nbsp;版本：<strong id="app-version">loading</strong>
+              &nbsp;<span data-i18n="modal-about-version">版本：</span><strong id="app-version">loading</strong>
             </div>
             <div style="margin-bottom: 8px">
-              <i class="fa-solid fa-server" style="color: #00f0ff; width: 18px"></i> &nbsp;技术栈：Node.js · Express ·
-              Socket.IO
+              <i class="fa-solid fa-server" style="color: #00f0ff; width: 18px"></i> &nbsp;<span data-i18n="modal-about-stack">技术栈：Node.js · Express · Socket.IO</span>
             </div>
             <div>
-              <i class="fa-solid fa-heart" style="color: #ff2a85; width: 18px"></i> &nbsp;专为多人 KTV 聚会实时点歌设计
+              <i class="fa-solid fa-heart" style="color: #ff2a85; width: 18px"></i> &nbsp;<span data-i18n="modal-about-desc">专为多人 KTV 聚会实时点歌设计</span>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="close-about-ok-btn">好的</button>
+          <button type="button" class="btn btn-primary" id="close-about-ok-btn" data-i18n="modal-about-ok">好的</button>
         </div>
       </div>
     </div>

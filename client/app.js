@@ -2,7 +2,7 @@
 import './style.css';
 import { playSound } from './js/audio.js';
 import { createAvatarElement, renderEmojiGrid, setAvatarElement, updateAvatarPreview } from './js/avatar.js';
-import { emojis, hotSongs } from './js/data.js';
+import { emojis, getHotSongs } from './js/data.js';
 import { appendText, clearChildren, createElement, getSafeHttpUrl } from './js/dom.js';
 import { state } from './js/state.js';
 import { closeArchiveModal, downloadSessionArchive, openArchiveModal } from './js/archive.js';
@@ -15,6 +15,7 @@ import {
 import { renderStats } from './js/stats.js';
 import { initializeSocketHandlers } from './js/socket-handlers.js';
 import { setupEventListeners } from './js/events.js';
+import { t, translatePage } from './js/i18n.js';
 
 const COMMIT_URL_BASE = 'https://github.com/uucky/shareq/commit/';
 const USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -147,11 +148,23 @@ document.addEventListener('DOMContentLoaded', () => {
     handleLoginJoin,
     openArchiveModal,
     playSound,
+    renderHistory,
+    renderHistoryRooms,
+    renderAppVersion,
+    renderMembers,
+    renderPlaylist,
+    renderSuggestions,
     renderStats,
     showToast,
+    updateDedicateSelect,
+    updateMessagesEmptyState,
+    updateNowPlaying,
     updateToastHistoryUI,
     updateWidgetUI
   });
+
+  // Apply saved language on first render
+  translatePage();
 });
 
 function renderAppVersion() {
@@ -173,7 +186,7 @@ function renderAppVersion() {
     commitLink.target = '_blank';
     commitLink.rel = 'noopener noreferrer';
     commitLink.textContent = __APP_COMMIT__;
-    commitLink.title = `Open commit ${__APP_COMMIT_FULL__} on GitHub`;
+    commitLink.title = t('title-commit-link', { commit: __APP_COMMIT_FULL__ });
     versionElement.appendChild(commitLink);
   }
 
@@ -185,7 +198,7 @@ function renderAppVersion() {
 function handleLoginJoin(mode) {
   const usernameInput = document.getElementById('setup-username').value.trim();
   if (!usernameInput) {
-    alert('请在进入前设定歌手昵称！');
+    alert(t('alert-set-nickname'));
     return;
   }
 
@@ -198,7 +211,7 @@ function handleLoginJoin(mode) {
   if (mode === 'join') {
     roomId = document.getElementById('room-id-input').value.trim().toUpperCase();
     if (!roomId) {
-      alert('请输入正确的房间号！');
+      alert(t('alert-invalid-room'));
       return;
     }
   } else {
@@ -219,7 +232,7 @@ function renderSuggestions() {
   const container = document.getElementById('suggestions-tags');
   clearChildren(container);
 
-  hotSongs.forEach((song) => {
+  getHotSongs(state.language).forEach((song) => {
     const tag = document.createElement('button');
     tag.type = 'button';
     tag.className = 'suggestion-tag';
@@ -320,14 +333,14 @@ function createAccompanimentLink(link) {
     'a',
     {
       className: 'song-accompaniment-link',
-      title: '伴奏链接',
+      title: t('accompaniment-link-title'),
       attributes: {
         href: safeLink,
         target: '_blank',
         rel: 'noopener noreferrer'
       }
     },
-    [createIcon('fa-link'), ' 伴奏']
+    [createIcon('fa-link'), t('accompaniment-link-text')]
   );
 }
 
@@ -347,7 +360,7 @@ function createRequesterRow(song, includeDedication = true, includeLink = true) 
   if (includeDedication && song.dedicatedBy) {
     const tag = createElement('span', { className: 'dedicate-tag' }, [
       createIcon('fa-gift'),
-      ` ${song.dedicatedBy} 指名`
+      ` ${song.dedicatedBy}${t('title-dedicate-tag-suffix')}`
     ]);
     requesterRow.appendChild(tag);
   }
@@ -368,12 +381,12 @@ function renderPlaylist() {
   clearChildren(container);
 
   // Update badges
-  document.getElementById('song-count-badge').textContent = `${state.playlist.length} 首`;
+  document.getElementById('song-count-badge').textContent = t('song-count-badge', { count: state.playlist.length });
 
   if (state.playlist.length <= 1) {
     // If only Now Playing exists or empty
     if (state.playlist.length === 0) {
-      container.appendChild(createEmptyState('fa-guitar', '歌单空空如也，快来点歌展示你的歌喉吧！'));
+      container.appendChild(createEmptyState('fa-guitar', t('empty-playlist-msg')));
       return;
     }
   }
@@ -400,21 +413,21 @@ function renderPlaylist() {
     const details = createElement('div', { className: 'song-details-col song-single-row' }, [
       createElement('span', { className: 'song-title-text', text: song.title }),
       createElement('span', { className: 'song-divider', text: '•' }),
-      createElement('span', { className: 'song-singer-text', text: song.singer || '未知歌手' }),
+      createElement('span', { className: 'song-singer-text', text: song.singer || t('unknown-singer') }),
       createRequesterRow(song)
     ]);
 
     const actions = createElement('div', { className: 'song-actions-col' });
     const priorityBtn = createSongActionButton(
       'action-icon-btn priority-btn',
-      '置顶这首歌 (移到最前)',
+      t('title-prioritize-song'),
       song.id,
       'fa-angles-up'
     );
     actions.appendChild(priorityBtn);
 
     if (canDelete) {
-      actions.appendChild(createSongActionButton('action-icon-btn delete-btn', '删除该歌曲', song.id, 'fa-trash-can'));
+      actions.appendChild(createSongActionButton('action-icon-btn delete-btn', t('title-delete-song'), song.id, 'fa-trash-can'));
     }
 
     row.appendChild(createElement('div', { className: 'song-index-col', text: i }));
@@ -458,7 +471,7 @@ function showTurnToSingReminder(song) {
   playSound('chime');
 
   // Show toast notification
-  showToast('shuffle', `🎤 轮到你唱歌啦！当前播放歌曲：《${song.title}》`);
+  showToast('shuffle', t('turn-sing-toast', { title: song.title }));
 
   // Also show a beautiful overlay reminder card for a few seconds
   const overlay = document.createElement('div');
@@ -466,16 +479,16 @@ function showTurnToSingReminder(song) {
 
   const card = createElement('div', { className: 'singing-turn-card animate-glow' }, [
     createElement('div', { className: 'singing-icon' }, [createIcon('fa-microphone-lines')]),
-    createElement('h2', { text: '轮到你上台啦！' }),
-    createElement('p', { text: '正在播放你点的歌曲：' }),
+    createElement('h2', { text: t('turn-sing-overlay-title') }),
+    createElement('p', { text: t('turn-sing-overlay-p') }),
     createElement('div', {
       className: 'song-info',
-      text: `《${song.title}》 - ${song.singer || '未知歌手'}`
+      text: `《${song.title}》 - ${song.singer || t('unknown-singer')}`
     }),
     createElement('button', {
       type: 'button',
       className: 'btn btn-primary btn-block close-overlay-btn',
-      text: '我已准备好',
+      text: t('turn-sing-overlay-btn'),
       style:
         'margin-top: 20px; background: var(--color-primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;'
     })
@@ -503,10 +516,10 @@ function renderHistory() {
   const container = document.getElementById('history-playlist-container');
   clearChildren(container);
 
-  document.getElementById('history-count-badge').textContent = `${state.historyPlaylist.length} 首`;
+  document.getElementById('history-count-badge').textContent = t('song-count-badge', { count: state.historyPlaylist.length });
 
   if (state.historyPlaylist.length === 0) {
-    container.appendChild(createEmptyState('fa-microphone-slash', '暂无唱毕曲目历史记录。'));
+    container.appendChild(createEmptyState('fa-microphone-slash', t('empty-history-msg')));
     return;
   }
 
@@ -527,7 +540,7 @@ function renderHistory() {
       },
       [
         createIcon('fa-circle-play'),
-        ` 唱毕: ${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}`
+        `${t('history-item-sung')}${song.completedAt ? new Date(song.completedAt).toLocaleTimeString() : '--'}`
       ]
     );
 
@@ -560,7 +573,7 @@ function renderHistory() {
         style: 'opacity: 0.6;'
       }),
       createElement('span', { className: 'song-divider', text: '•' }),
-      createElement('span', { className: 'song-singer-text', text: song.singer || '未知歌手' }),
+      createElement('span', { className: 'song-singer-text', text: song.singer || t('unknown-singer') }),
       createRequesterRow(song, false, false),
       historyTime,
       reactionSummary
@@ -593,7 +606,7 @@ function renderMembers() {
     av.title = user.username;
     stack.appendChild(av);
   }
-  document.getElementById('online-count-txt').textContent = `${state.roomUsers.length} 人在线`;
+  document.getElementById('online-count-txt').textContent = t('online-count', { count: state.roomUsers.length });
 
   // 2. Members panel on the left side
   const container = document.getElementById('members-list-container');
@@ -608,9 +621,9 @@ function renderMembers() {
 
     let roleBadge = null;
     if (isHost) {
-      roleBadge = createElement('span', { className: 'badge-host' }, [createIcon('fa-crown'), ' 主持人']);
+      roleBadge = createElement('span', { className: 'badge-host' }, [createIcon('fa-crown'), t('title-role-host')]);
     } else if (isMod) {
-      roleBadge = createElement('span', { className: 'badge-mod' }, [createIcon('fa-shield-halved'), ' 房管']);
+      roleBadge = createElement('span', { className: 'badge-mod' }, [createIcon('fa-shield-halved'), t('title-role-mod')]);
     }
 
     const row = document.createElement('div');
@@ -627,7 +640,7 @@ function renderMembers() {
             {
               type: 'button',
               className: 'member-action-btn btn-action-mod',
-              title: isMod ? '取消房管' : '设为房管',
+              title: isMod ? t('title-action-mod-cancel') : t('title-action-mod-set'),
               dataset: {
                 userid: u.userId,
                 ismod: isMod
@@ -643,7 +656,7 @@ function renderMembers() {
             {
               type: 'button',
               className: 'member-action-btn btn-action-transfer',
-              title: '移交主持人',
+              title: t('title-action-transfer'),
               dataset: { userid: u.userId }
             },
             [createIcon('fa-crown')]
@@ -660,10 +673,10 @@ function renderMembers() {
             {
               type: 'button',
               className: 'member-action-btn btn-action-kick',
-              title: '踢出房间',
+              title: t('title-action-kick'),
               dataset: { socketid: u.socketId }
             },
-            [createIcon('fa-user-slash'), ' 踢']
+            [createIcon('fa-user-slash'), t('kick-btn-text')]
           )
         );
       }
@@ -702,7 +715,7 @@ function renderMembers() {
         row.querySelector('.btn-action-transfer').addEventListener('click', () => {
           if (
             confirm(
-              `⚠️ 警告：您确定要将房主（主持人）权限完全移交给“${u.username}”吗？此操作将不可逆，您将被降为房管！`
+              t('confirm-transfer-host', { username: u.username })
             )
           ) {
             state.socket.emit('transfer-host', { targetUserId: u.userId });
@@ -713,7 +726,7 @@ function renderMembers() {
       const currentCanKick = currentIsHost || (currentIsMod && !isHost && !isMod);
       if (currentCanKick) {
         row.querySelector('.btn-action-kick').addEventListener('click', () => {
-          if (confirm(`确定要踢出用户“${u.username}”吗？`)) {
+          if (confirm(t('confirm-kick-user', { username: u.username }))) {
             state.socket.emit('kick-user', { targetSocketId: u.socketId });
           }
         });
@@ -749,7 +762,7 @@ function updateNowPlaying() {
   if (state.playlist.length > 0) {
     const currentSong = state.playlist[0];
     titleElem.textContent = currentSong.title;
-    singerElem.textContent = currentSong.singer ? `${currentSong.singer}` : '未指定歌手';
+    singerElem.textContent = currentSong.singer ? `${currentSong.singer}` : t('no-singer-specified');
     clearChildren(userElem);
     userElem.appendChild(
       createElement(
@@ -768,7 +781,7 @@ function updateNowPlaying() {
       if (currentSong.dedicatedBy) {
         clearChildren(dedicateBadge);
         dedicateBadge.appendChild(createIcon('fa-gift'));
-        appendText(dedicateBadge, ` ${currentSong.dedicatedBy} 指名`);
+        appendText(dedicateBadge, ` ${currentSong.dedicatedBy}${t('title-dedicate-tag-suffix')}`);
         dedicateBadge.classList.remove('hidden');
       } else {
         dedicateBadge.classList.add('hidden');
@@ -818,8 +831,8 @@ function updateNowPlaying() {
     }
   } else {
     // Empty state
-    titleElem.textContent = '暂无演唱歌曲';
-    singerElem.textContent = '点歌后即可在此开启演唱';
+    titleElem.textContent = t('now-playing-empty-title');
+    singerElem.textContent = t('now-playing-empty-subtitle');
     userElem.textContent = '--';
     linkBtn.classList.add('hidden');
     linkBtn.removeAttribute('href');
@@ -938,12 +951,12 @@ function renderHistoryRooms() {
     textNode.appendChild(
       createElement('span', {
         className: 'room-number',
-        text: `房间号: ${roomId}`
+        text: t('history-room-label', { roomId })
       })
     );
     textNode.appendChild(
       createElement('span', {
-        text: `上次进入: ${new Date(joinedAt).toLocaleDateString()}`,
+        text: t('history-room-date', { date: new Date(joinedAt).toLocaleDateString() }),
         style: 'font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;'
       })
     );
@@ -955,7 +968,7 @@ function renderHistoryRooms() {
     joinBtn.style.fontSize = '0.85rem';
     joinBtn.style.fontWeight = '600';
     joinBtn.appendChild(createIcon('fa-right-to-bracket'));
-    appendText(joinBtn, ' 快捷进入');
+    appendText(joinBtn, t('history-room-join'));
 
     // Make clicking the whole item or the button trigger the join
     const triggerJoin = (e) => {
@@ -990,7 +1003,7 @@ function updateDedicateSelect() {
   clearChildren(select);
   select.appendChild(
     createElement('option', {
-      text: '-- 自己唱 (默认) --',
+      text: t('song-dedicate-default'),
       attributes: { value: '' }
     })
   );

@@ -21,6 +21,33 @@ export const randomNames = [
   '原唱杀手'
 ];
 
+const englishRandomNames = [
+  'Ballad Star',
+  'Mic Master',
+  'Soul Singer',
+  'Lonely Crooner',
+  'Shower Idol',
+  'Velvet Voice',
+  'High Note Hero',
+  'Pitch Rebel',
+  'Falsetto Pro',
+  'Rock Legend',
+  'KTV Prince',
+  'Mic Dropper',
+  'Electro King',
+  'Love Song Ace',
+  'Rap Rookie',
+  'Folk Poet',
+  'Sweet Song Diva',
+  'Rock Queen',
+  'Hit Maker',
+  'Cover Slayer'
+];
+
+export function getRandomNames(language) {
+  return language === 'en' ? englishRandomNames : randomNames;
+}
+
 export const emojis = [
   '🎤',
   '🎵',
@@ -106,3 +133,20 @@ export const hotSongs = [
   { title: '消愁', singer: '毛不易' },
   { title: '小情歌', singer: '苏打绿' }
 ];
+
+const englishHotSongs = [
+  { title: 'Yesterday Once More', singer: 'The Carpenters' },
+  { title: 'My Heart Will Go On', singer: 'Celine Dion' },
+  { title: 'I Want It That Way', singer: 'Backstreet Boys' },
+  { title: 'Someone Like You', singer: 'Adele' },
+  { title: 'Perfect', singer: 'Ed Sheeran' },
+  { title: 'Rolling in the Deep', singer: 'Adele' },
+  { title: 'Bohemian Rhapsody', singer: 'Queen' },
+  { title: 'Hotel California', singer: 'Eagles' },
+  { title: 'Let It Be', singer: 'The Beatles' },
+  { title: 'Take Me Home, Country Roads', singer: 'John Denver' }
+];
+
+export function getHotSongs(language) {
+  return language === 'en' ? englishHotSongs : hotSongs;
+}

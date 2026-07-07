@@ -31,6 +31,23 @@ const ROOM_ID_PATTERN = /^[A-Z0-9]+$/;
 const SONG_SUBMISSION_COOLDOWN_MS = 1500;
 const REACTION_COOLDOWN_MS = 300;
 
+function localizedMessage(type, i18nKey, i18nParams, text) {
+  return {
+    type,
+    text,
+    i18nKey,
+    i18nParams
+  };
+}
+
+function localizedFailure(i18nKey, i18nParams, message) {
+  return {
+    message,
+    i18nKey,
+    i18nParams
+  };
+}
+
 function isPayloadObject(payload) {
   return payload !== null && typeof payload === 'object' && !Array.isArray(payload);
 }
@@ -235,7 +252,10 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
     }
 
     logger.error('Failed to persist room data after socket event.');
-    socket.emit('system-message', { type: 'error', text: '歌单保存失败，请稍后重试' });
+    socket.emit(
+      'system-message',
+      localizedMessage('error', 'server-save-failed', {}, '歌单保存失败，请稍后重试')
+    );
     return false;
   }
 
@@ -245,7 +265,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
     socket.on('join-room', (payload) => {
       const joinPayload = validateJoinPayload(payload);
       if (!joinPayload) {
-        socket.emit('join-failed', { message: INVALID_JOIN_MESSAGE });
+        socket.emit('join-failed', localizedFailure('server-invalid-join', {}, INVALID_JOIN_MESSAGE));
         return;
       }
 
@@ -257,7 +277,14 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
         (user) => user.username.toLowerCase() === normUsername.toLowerCase() && user.userId !== cleanUserId
       );
       if (isNameTaken) {
-        socket.emit('join-failed', { message: `昵称“${normUsername}”已在此房间中被占用，请更换昵称后重新加入！` });
+        socket.emit(
+          'join-failed',
+          localizedFailure(
+            'server-username-taken',
+            { username: normUsername },
+            `昵称“${normUsername}”已在此房间中被占用，请更换昵称后重新加入！`
+          )
+        );
         return;
       }
 
@@ -309,7 +336,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const profilePayload = validateProfilePayload(payload);
       if (!profilePayload) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
@@ -336,12 +363,12 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const songPayload = validateSongPayload(payload);
       if (!songPayload) {
-        socket.emit('system-message', { type: 'error', text: INVALID_SONG_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-song', {}, INVALID_SONG_MESSAGE));
         return;
       }
 
       if (!consumeCooldown(socket, 'song-submission', SONG_SUBMISSION_COOLDOWN_MS)) {
-        socket.emit('system-message', { type: 'error', text: '操作太频繁，请稍后再试' });
+        socket.emit('system-message', localizedMessage('error', 'server-rate-limit', {}, '操作太频繁，请稍后再试'));
         return;
       }
 
@@ -350,7 +377,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('playlist-updated', room.songs);
       io.to(userData.roomId).emit('system-message', {
         type: 'add',
-        text: `${userData.username} 点了《${result.song.title}》`
+        text: `${userData.username} 点了《${result.song.title}》`,
+        i18nKey: 'server-add-song',
+        i18nParams: { username: userData.username, title: result.song.title }
       });
       persistRooms(socket);
     });
@@ -368,12 +397,12 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const dedicationPayload = validateDedicationPayload(payload);
       if (!dedicationPayload) {
-        socket.emit('dedication-failed', { message: INVALID_DEDICATION_MESSAGE });
+        socket.emit('dedication-failed', localizedFailure('server-invalid-dedication', {}, INVALID_DEDICATION_MESSAGE));
         return;
       }
 
       if (!consumeCooldown(socket, 'song-submission', SONG_SUBMISSION_COOLDOWN_MS)) {
-        socket.emit('dedication-failed', { message: '操作太频繁，请稍后再试' });
+        socket.emit('dedication-failed', localizedFailure('server-rate-limit', {}, '操作太频繁，请稍后再试'));
         return;
       }
 
@@ -389,7 +418,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       }
 
       if (!targetSocketId) {
-        socket.emit('dedication-failed', { message: '该用户已下线或不存在' });
+        socket.emit('dedication-failed', localizedFailure('server-user-offline', {}, '该用户已下线或不存在'));
         return;
       }
 
@@ -422,7 +451,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
     socket.on('respond-dedication', (payload) => {
       const responsePayload = validateDedicationResponsePayload(payload);
       if (!responsePayload) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
@@ -448,13 +477,21 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
         io.to(dedication.roomId).emit('playlist-updated', room.songs);
         io.to(dedication.roomId).emit('system-message', {
           type: 'add',
-          text: `🎵 ${dedication.targetUsername} 接受了 ${dedication.fromUsername} 的指名点歌《${dedication.title}》`
+          text: `🎵 ${dedication.targetUsername} 接受了 ${dedication.fromUsername} 的指名点歌《${dedication.title}》`,
+          i18nKey: 'server-dedication-accepted-room',
+          i18nParams: {
+            targetUsername: dedication.targetUsername,
+            fromUsername: dedication.fromUsername,
+            title: dedication.title
+          }
         });
 
         if (senderSocket) {
           senderSocket.emit('dedication-response-notify', {
             type: 'accept',
-            text: `🎉 ${dedication.targetUsername} 接受了你指名点播的《${dedication.title}》！`
+            text: `🎉 ${dedication.targetUsername} 接受了你指名点播的《${dedication.title}》！`,
+            i18nKey: 'server-dedication-accepted-self',
+            i18nParams: { targetUsername: dedication.targetUsername, title: dedication.title }
           });
         }
         return;
@@ -463,7 +500,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       if (senderSocket) {
         senderSocket.emit('dedication-response-notify', {
           type: 'decline',
-          text: `❌ ${dedication.targetUsername} 拒绝了你指名点播的《${dedication.title}》`
+          text: `❌ ${dedication.targetUsername} 拒绝了你指名点播的《${dedication.title}》`,
+          i18nKey: 'server-dedication-declined-self',
+          i18nParams: { targetUsername: dedication.targetUsername, title: dedication.title }
         });
       }
     });
@@ -481,7 +520,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const songId = validateStringIdPayload(payload, 'songId');
       if (!songId) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
@@ -493,7 +532,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('playlist-updated', room.songs);
       io.to(userData.roomId).emit('system-message', {
         type: 'pin',
-        text: `${userData.username} 置顶了《${result.song.title}》`
+        text: `${userData.username} 置顶了《${result.song.title}》`,
+        i18nKey: 'server-pin-song',
+        i18nParams: { username: userData.username, title: result.song.title }
       });
       persistRooms(socket);
     });
@@ -511,13 +552,13 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const songId = validateStringIdPayload(payload, 'songId');
       if (!songId) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
       const result = deleteSong(room, userData, songId);
       if (result.reason === 'forbidden') {
-        socket.emit('system-message', { type: 'error', text: '您只能删除自己点的歌曲！' });
+        socket.emit('system-message', localizedMessage('error', 'server-delete-forbidden', {}, '您只能删除自己点的歌曲！'));
         return;
       }
       if (!result.changed) {
@@ -527,7 +568,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('playlist-updated', room.songs);
       io.to(userData.roomId).emit('system-message', {
         type: 'delete',
-        text: `${userData.username} 删除了《${result.song.title}》`
+        text: `${userData.username} 删除了《${result.song.title}》`,
+        i18nKey: 'server-delete-song',
+        i18nParams: { username: userData.username, title: result.song.title }
       });
       persistRooms(socket);
     });
@@ -544,7 +587,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       }
 
       if (!canManageQueue(userData, room)) {
-        socket.emit('system-message', { type: 'error', text: '只有主持人或房管可以打乱歌单' });
+        socket.emit('system-message', localizedMessage('error', 'server-shuffle-forbidden', {}, '只有主持人或房管可以打乱歌单'));
         return;
       }
 
@@ -556,7 +599,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('playlist-updated', room.songs);
       io.to(userData.roomId).emit('system-message', {
         type: 'shuffle',
-        text: `${userData.username} 打乱了歌单`
+        text: `${userData.username} 打乱了歌单`,
+        i18nKey: 'server-shuffle',
+        i18nParams: { username: userData.username }
       });
       persistRooms(socket);
     });
@@ -581,7 +626,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('history-updated', room.alreadySung);
       io.to(userData.roomId).emit('system-message', {
         type: 'next',
-        text: `${userData.username} 开启了下一首，已移至已唱《${result.song.title}》`
+        text: `${userData.username} 开启了下一首，已移至已唱《${result.song.title}》`,
+        i18nKey: 'server-next-song',
+        i18nParams: { username: userData.username, title: result.song.title }
       });
       persistRooms(socket);
     });
@@ -606,7 +653,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('history-updated', room.alreadySung);
       io.to(userData.roomId).emit('system-message', {
         type: 'next',
-        text: `${userData.username} 返回了上一首《${result.song.title}》`
+        text: `${userData.username} 返回了上一首《${result.song.title}》`,
+        i18nKey: 'server-prev-song',
+        i18nParams: { username: userData.username, title: result.song.title }
       });
       persistRooms(socket);
     });
@@ -631,7 +680,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('history-updated', room.alreadySung);
       io.to(userData.roomId).emit('system-message', {
         type: 'shuffle',
-        text: `${userData.username} 执行了撤销`
+        text: `${userData.username} 执行了撤销`,
+        i18nKey: 'server-undo',
+        i18nParams: { username: userData.username }
       });
       persistRooms(socket);
     });
@@ -656,7 +707,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('history-updated', room.alreadySung);
       io.to(userData.roomId).emit('system-message', {
         type: 'shuffle',
-        text: `${userData.username} 执行了前进`
+        text: `${userData.username} 执行了前进`,
+        i18nKey: 'server-redo',
+        i18nParams: { username: userData.username }
       });
       persistRooms(socket);
     });
@@ -674,7 +727,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const targetUserId = validateStringIdPayload(payload, 'targetUserId');
       if (!targetUserId) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
@@ -700,7 +753,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const targetUserId = validateStringIdPayload(payload, 'targetUserId');
       if (!targetUserId) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
@@ -726,7 +779,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const targetSocketId = validateStringIdPayload(payload, 'targetSocketId');
       if (!targetSocketId) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 
@@ -748,7 +801,9 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
       io.to(userData.roomId).emit('users-updated', getRoomUsers(userData.roomId));
       io.to(userData.roomId).emit('system-message', {
         type: 'delete',
-        text: `${targetUserData.username} 被管理员移出了房间`
+        text: `${targetUserData.username} 被管理员移出了房间`,
+        i18nKey: 'server-kick-user',
+        i18nParams: { username: targetUserData.username }
       });
     });
 
@@ -785,7 +840,7 @@ export function registerSocketHandlers({ io, roomsData, activeConnections, pendi
 
       const type = validateStringIdPayload(payload, 'type');
       if (!type) {
-        socket.emit('system-message', { type: 'error', text: INVALID_REQUEST_MESSAGE });
+        socket.emit('system-message', localizedMessage('error', 'server-invalid-request', {}, INVALID_REQUEST_MESSAGE));
         return;
       }
 

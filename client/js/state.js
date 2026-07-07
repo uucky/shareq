@@ -13,5 +13,7 @@ export const state = {
   unreadToastsCount: 0,
   lastSingingSongId: '',
   lastPinnedSongId: null,
-  isSoundMuted: localStorage.getItem('shareq_gift_muted') === 'true'
+  isSoundMuted: localStorage.getItem('shareq_gift_muted') === 'true',
+  language: localStorage.getItem('shareq_lang') || (navigator.language.startsWith('zh') ? 'zh-CN' : 'en')
 };
+
