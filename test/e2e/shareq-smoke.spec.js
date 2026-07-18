@@ -89,6 +89,16 @@ test('defaults to Chinese only when the browser language is Chinese', async ({ b
     await expect(englishPage.locator('[data-i18n="setup-profile-title"]')).toHaveText('Set Up Your Profile');
     await expect(chinesePage.locator('html')).toHaveAttribute('lang', 'zh-CN');
     await expect(chinesePage.locator('[data-i18n="setup-profile-title"]')).toHaveText('设置你的歌手档案');
+
+    const chineseButton = englishPage.locator('.lang-switch-lobby .lang-btn[data-lang="zh-CN"]');
+    await expect(chineseButton).toBeVisible();
+    await chineseButton.click();
+    await expect(englishPage.locator('html')).toHaveAttribute('lang', 'zh-CN');
+    await expect(englishPage.locator('[data-i18n="setup-profile-title"]')).toHaveText('设置你的歌手档案');
+
+    await englishPage.reload();
+    await expect(englishPage.locator('html')).toHaveAttribute('lang', 'zh-CN');
+    await expect(chineseButton).toHaveClass(/active/);
   } finally {
     try {
       await closeContexts(contexts);
