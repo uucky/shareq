@@ -64,11 +64,39 @@ function contextOptionsForProject(projectUse) {
 function seedUserStorage({ userId }) {
   globalThis.localStorage.setItem('shareq_userid', userId);
   globalThis.localStorage.setItem('shareq_avatar', '🎤');
+  globalThis.localStorage.setItem('shareq_lang', 'zh-CN');
   globalThis.localStorage.removeItem('shareq_last_room');
   globalThis.localStorage.removeItem('shareq_username');
   globalThis.localStorage.removeItem('shareq_theme');
   globalThis.localStorage.removeItem('shareq_compact_mode');
 }
+
+test('defaults to Chinese only when the browser language is Chinese', async ({ browser }, testInfo) => {
+  const server = await createTestServer();
+  const contexts = [];
+
+  try {
+    const projectOptions = contextOptionsForProject(testInfo.project.use);
+    const englishContext = await browser.newContext({ ...projectOptions, locale: 'en-CA' });
+    const chineseContext = await browser.newContext({ ...projectOptions, locale: 'zh-CN' });
+    contexts.push(englishContext, chineseContext);
+
+    const englishPage = await englishContext.newPage();
+    const chinesePage = await chineseContext.newPage();
+    await Promise.all([englishPage.goto(server.origin), chinesePage.goto(server.origin)]);
+
+    await expect(englishPage.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(englishPage.locator('[data-i18n="setup-profile-title"]')).toHaveText('Set Up Your Profile');
+    await expect(chinesePage.locator('html')).toHaveAttribute('lang', 'zh-CN');
+    await expect(chinesePage.locator('[data-i18n="setup-profile-title"]')).toHaveText('设置你的歌手档案');
+  } finally {
+    try {
+      await closeContexts(contexts);
+    } finally {
+      await closeTestServer(server);
+    }
+  }
+});
 
 async function openSeededPage(page, { origin, userId }) {
   await page.addInitScript(seedUserStorage, { userId });

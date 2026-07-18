@@ -1,3 +1,13 @@
+function getInitialLanguage() {
+  const savedLanguage = localStorage.getItem('shareq_lang');
+  if (savedLanguage === 'zh-CN' || savedLanguage === 'en') {
+    return savedLanguage;
+  }
+
+  const browserLanguage = navigator.languages?.[0] || navigator.language || '';
+  return /^zh(?:-|$)/i.test(browserLanguage) ? 'zh-CN' : 'en';
+}
+
 export const state = {
   socket: null,
   currentRoomId: '',
@@ -14,5 +24,5 @@ export const state = {
   lastSingingSongId: '',
   lastPinnedSongId: null,
   isSoundMuted: localStorage.getItem('shareq_gift_muted') === 'true',
-  language: localStorage.getItem('shareq_lang') || 'zh-CN'
+  language: getInitialLanguage()
 };
