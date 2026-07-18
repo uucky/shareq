@@ -1,6 +1,6 @@
 {
   "name": "shareq",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "description": "共享卡拉OK歌单系统，专为多人 KTV 聚会设计的实时点歌 Web 应用",
   "main": "server.js",
   "scripts": {
